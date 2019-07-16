@@ -1,0 +1,35 @@
+---
+title: "Project 3"
+author: "Kristin Calvert"
+date: "7/15/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(shiny)
+library(tidyverse)
+library(knitr)
+library(DT)
+```
+
+## Project 3
+
+```{r data_ingest}
+
+#read in data
+data_by_library <- read_csv("libraries.csv")
+
+data_by_state <- read_csv("states.csv")
+
+```
+
+## Data Exploration
+
+```{r data_summary}
+#Summarize by region
+regional_summary <- data_by_state %>% group_by(`Region Code`) %>% summarise("Average Service Population" = mean(`Service Population`), "Average Service Population per Library" = mean(`Service Population`)/(sum(`Central Libraries`)+sum(`Branch Libraries`)), "Average Library Employees per 10,000 People" = mean(Employees)/sum(`Service Population`)*10000, "Average Collections Spending per 10,000 People" = mean(`Total Collection Expenditures`)/sum(`Service Population`)*10000, "Total Visits" = sum(`Library Visits`))
+
+attributes(data_by_state)
+```
+
