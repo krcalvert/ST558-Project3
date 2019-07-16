@@ -13,7 +13,7 @@ library(knitr)
 library(DT)
 ```
 
-## Project 3
+## Project 3 
 
 ```{r data_ingest}
 
@@ -30,6 +30,19 @@ data_by_state <- read_csv("states.csv")
 #Summarize by region
 regional_summary <- data_by_state %>% group_by(`Region Code`) %>% summarise("Average Service Population" = mean(`Service Population`), "Average Service Population per Library" = mean(`Service Population`)/(sum(`Central Libraries`)+sum(`Branch Libraries`)), "Average Library Employees per 10,000 People" = mean(Employees)/sum(`Service Population`)*10000, "Average Collections Spending per 10,000 People" = mean(`Total Collection Expenditures`)/sum(`Service Population`)*10000, "Total Visits" = sum(`Library Visits`))
 
-attributes(data_by_state)
+
+#Create groupings of columns
+Staffing <- c("MLS Librarians", "Librarians", "Employees", "Total Staff")
+Finances <- c("Total Staff Expenditures", "Total Operating Expenditures", "Print Collection Expenditures",
+"Digital Collection Expenditures", "Other Collection Expenditures", "Total Collection Expenditures")
+Collections <- c("Print Collection", "Digital Collection", "Audio Collection", "Downloadable Audio", "Physical Video", "Downloadable Video", "State Licensed Databases", "Total Licensed Databases", "Print Subscriptions")
+
+subset_data <- function(x){
+  subset <- data_by_state %>% select(x)
+  kable(round(apply(subset, 2, summary), 2), caption = paste("Summary Statistics for", x))
+}
+
+subset_data(Staffing)
+
 ```
 
