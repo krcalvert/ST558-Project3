@@ -26,6 +26,9 @@ data_by_state <- read_csv("states.csv")
 data_by_state$State <- as.factor(data_by_state$State)
 data_by_state$`Region Code` <- as.factor(data_by_state$`Region Code`)
 
+#create a new column for total number of libraries
+data_by_state$`Total Libraries` <- data_by_state$`Central Libraries`+data_by_state$`Branch Libraries`
+
 #subset data for southeast region
 data_by_region_se <- data_by_state %>% filter(`Region Code` == "5")
 ```
@@ -58,7 +61,14 @@ subset_data(Collections)
 g <- ggplot(data = data_by_state, aes(x = `Circulation Transactions`, y = `Service Population`, group = `Region Code`))
 g + geom_point(aes(color = `Library Visits`))
 
+gp <- ggplot(data = data_by_state, aes(x = `Total Staff Expenditures`, y = `Circulation Transactions`))
+gp + geom_point(aes(color = `Region Code`))
 
+
+
+```
+
+```{r box_and_bar_plots}
 #Box plot function for operating costs by region
 
 ##plot_costs_by_region <- function(region, cost){
@@ -77,5 +87,34 @@ g + geom_point(aes(color = `Library Visits`))
     ggtitle("Per Capita Public Library Operating Costs for Southeast Region (US).") + ##Switch to dynamic title
     ylab("Dollars Spent per Capita")
 ##}
+```
+
+```{r PCA}
+
+#Create the PCs. Not to be adjustable by input
+PCs <- prcomp(select(data_by_state, `Service Population`, `Total Libraries`, `Total Staff`, `Local Government Operating Revenue`, `Total Operating Revenue`, `Total Staff Expenditures`, `Print Collection Expenditures`, `Total Collection Expenditures`, `Total Operating Expenditures`, `Print Collection`, `Audio Collection`, `Physical Video`, `Print Subscriptions`, `Hours Open`, `Library Visits`, `Circulation Transactions`, `Library Programs`, `Library Programs`, `Public Internet Computers`, `Internet Computer Use`), center = TRUE, scale = TRUE)
+
+#Create the scree plot
+screeplot(PCs, type = "lines")
+
+#Create plots to show proportion of variance and cummulative variance by PC
+par(mfrow = c(1, 2))
+plot(PCs$sdev^2/sum(PCs$sdev^2), xlab = "Principal Component", 
+         ylab = "Proportion of Variance Explained", ylim = c(0, 1), type = 'b')
+plot(cumsum(PCs$sdev^2/sum(PCs$sdev^2)), xlab = "Principal Component", 
+ylab = "Cum. Prop of Variance Explained", ylim = c(0, 1), type = 'b')
+
+#Create Biplot
+##Must add user input to view PCs
+biplot(PCs, xlabs = rep(".", nrow(data_by_state)), choices = c(2,3), cex = .6)
+
+##Must add dynamic table print for PCs selected in the biplot
+kable(PCs$rotation[,c("PC1","PC2")])
+
+```
+
+```{r modeling}
+
+
 ```
 
