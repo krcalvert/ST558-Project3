@@ -22,6 +22,12 @@ data_by_library <- read_csv("libraries.csv")
 
 data_by_state <- read_csv("states.csv")
 
+#convert columns to factors
+data_by_state$State <- as.factor(data_by_state$State)
+data_by_state$`Region Code` <- as.factor(data_by_state$`Region Code`)
+
+#subset data for southeast region
+data_by_region_se <- data_by_state %>% filter(`Region Code` == "5")
 ```
 
 ## Data Exploration
@@ -37,12 +43,39 @@ Finances <- c("Total Staff Expenditures", "Total Operating Expenditures", "Print
 "Digital Collection Expenditures", "Other Collection Expenditures", "Total Collection Expenditures")
 Collections <- c("Print Collection", "Digital Collection", "Audio Collection", "Downloadable Audio", "Physical Video", "Downloadable Video", "State Licensed Databases", "Total Licensed Databases", "Print Subscriptions")
 
+#Function to create a summary table based on grouped columns
 subset_data <- function(x){
   subset <- data_by_state %>% select(x)
-  kable(round(apply(subset, 2, summary), 2), caption = paste("Summary Statistics for", x))
+  kable(round(apply(subset, 2, summary), 2), caption = paste("State-Level Summary Statistics for", deparse(substitute(x))))
 }
 
 subset_data(Staffing)
+subset_data(Finances)
+subset_data(Collections)
 
+#Scatter plot
+
+g <- ggplot(data = data_by_state, aes(x = `Circulation Transactions`, y = `Service Population`, group = `Region Code`))
+g + geom_point(aes(color = `Library Visits`))
+
+
+#Box plot function for operating costs by region
+
+##plot_costs_by_region <- function(region, cost){
+  
+    #Switch from string to code for region
+#  region <- switch(input$region, "New England (CT ME MA NH RI VT)" = "1" , "Mid East (DE DC MD NH NY PA)" = "2", "Great Lakes(IL IN MI OH WI" = "3", "Plains (IA KS MN MO NE ND SD" ="4", "Southeast (AL AR FL GA KY L MS NC SC TN VA WV" = "5", "Southwest (AZ NM OK TX)" = "6", "Rocky Mountains (CO ID MT UT WY)" = "7", "Far West (AK CA HI NV OR WA)" = "8")  ##Switch to dynamic input$region
+  
+    #Function to subset data by selected region
+  subset_by_region <- function(region){
+  data_by_region <- data_by_state %>% filter(`Region Code` == region) 
+  }
+  
+    #Bar chart of selected cost variable by selected region
+  ggplot(data = data_by_region_se, aes(x = `State`, y = `Total Operating Expenditures`/`State Population`)) + ##switch to input$cost_type and input$region
+    geom_bar(stat = "Identity") + 
+    ggtitle("Per Capita Public Library Operating Costs for Southeast Region (US).") + ##Switch to dynamic title
+    ylab("Dollars Spent per Capita")
+##}
 ```
 
