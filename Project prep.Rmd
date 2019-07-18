@@ -11,6 +11,9 @@ library(shiny)
 library(tidyverse)
 library(knitr)
 library(DT)
+library(caret)
+library(randomForest)
+library(tree)
 ```
 
 ## Project 3 
@@ -115,6 +118,42 @@ kable(PCs$rotation[,c("PC1","PC2")])
 
 ```{r modeling}
 
+#Bagged tree model to predict Salary expenditure
+
+#Exclude columns with no variance
+colnames(data_by_state) <- make.names(colnames(data_by_state))
+state_data_limited <- data_by_state %>% dplyr::select(-State, -Submission.Year, -Start.Date, -End.Date)
+
+#Create training and test sets
+set.seed(250)
+train <- sample(1:nrow(state_data_limited), size = nrow(state_data_limited)*.8)
+test <- dplyr::setdiff(1:nrow(state_data_limited), train)
+
+state_data_train <- state_data_limited[train,]
+state_data_test <- state_data_limited[test,]
+
+#Fit bagged model
+train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+bag_tree_fit <- train(Salaries ~ .,
+                data = state_data_train,
+                method = "treebag",
+                trControl = train_control)
+
+bag_predict <- predict(bag_tree_fit, newdata = dplyr::select(state_data_test, -Salaries))
+bag_RMSE <- sqrt(mean((bag_predict-state_data_test$Salaries)^2))
+
+
+#Simple tree model to predict salary expenditure
+tree_fit <- tree(Salaries ~ ., data = state_data_limited)
+tree_predict <- 
+plot(tree_fit)
+text(tree_fit, cex=.8)
+cv_tree <- cv.tree(tree_fit); cv_tree
+plot(cv_tree$size, cv_tree$dev, type ="b")
+
+tree_predict <- predict(tree_fit, newdata = dplyr::select(state_data_test, -Salaries))
+tree_RMSE <- sqrt(mean((tree_predict-state_data_test$Salaries)^2))
 
 ```
 
