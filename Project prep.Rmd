@@ -14,11 +14,34 @@ library(DT)
 library(caret)
 library(randomForest)
 library(tree)
+library(leaflet)
 ```
 
 ## Project 3 
 
+About the Survey
+
+from 
+[https://www.imls.gov/research-evaluation/data-collection/public-libraries-survey](About the PLS)
+[https://www.imls.gov/sites/default/files/fy2014_pls_data_file_documentation.pdf](Documentation)
+
+The Public Libraries Survey (PLS) examines when, where, and how library services are changing to meet the needs of the public. These data, supplied annually by public libraries across the country, provide information that policymakers and practitioners can use to make informed decisions about the support and strategic management of libraries.
+
+Purpose: The survey provides statistics on the status of public libraries in the United States.
+
+Coverage: The data are collected from approximately 9,000 public libraries with approximately 17,000 individual public library outlets (main libraries, branches, and bookmobiles) in the 50 states, the District of Columbia, and outlying territories.
+
+Content: Data includes information about library visits, circulation, size of collections, public service hours, staffing, electronic resources, operating revenues and expenditures and number of service outlets. Learn more about PLS data element definitions.
+
+Frequency: Collected annually since 1988. (Data files are available since 1992.)
+
+Methods: At the state level, PLS is administered by Data Coordinators, appointed by the chief officer of the state library agency from each state or outlying area. State Data Coordinators collect the requested data from local public libraries and report these data to us via a web-based reporting system.
+
+Use: PLS data are useful to researchers, journalists, the public, local practitioners, and policymakers at the federal, state, and local levels, and are used for planning, evaluation, and policy making. Download the datasets in multiple formats below, or use our online Library Search & Compare tool to find a library and browse the latest available data. Browse over 25 years’ worth of research publications about the Public Libraries Survey (PLS).
+
 ```{r data_ingest}
+
+
 
 #read in data
 data_by_library <- read_csv("libraries.csv")
@@ -28,6 +51,10 @@ data_by_state <- read_csv("states.csv")
 #convert columns to factors
 data_by_state$State <- as.factor(data_by_state$State)
 data_by_state$`Region Code` <- as.factor(data_by_state$`Region Code`)
+
+#Fix column names
+colnames(data_by_state) <- make.names(colnames(data_by_state))
+colnames(data_by_library) <- make.names(colnames(data_by_library))
 
 #create a new column for total number of libraries
 data_by_state$`Total Libraries` <- data_by_state$`Central Libraries`+data_by_state$`Branch Libraries`
@@ -121,8 +148,8 @@ kable(PCs$rotation[,c("PC1","PC2")])
 #Bagged tree model to predict Salary expenditure
 
 #Exclude columns with no variance
-colnames(data_by_state) <- make.names(colnames(data_by_state))
-state_data_limited <- data_by_state %>% dplyr::select(-State, -Submission.Year, -Start.Date, -End.Date)
+
+state_data_limited <- data_by_state %>% dplyr::select(Salaries, Region.Code, Service.Population, Circulation.Transactions, Library.Visits, Library.Programs)
 
 #Create training and test sets
 set.seed(250)
@@ -145,8 +172,8 @@ bag_RMSE <- sqrt(mean((bag_predict-state_data_test$Salaries)^2))
 
 
 #Simple tree model to predict salary expenditure
-tree_fit <- tree(Salaries ~ ., data = state_data_limited)
-tree_predict <- 
+tree_fit <- tree(Salaries ~ ., data = state_data_limited, split = "deviance")
+
 plot(tree_fit)
 text(tree_fit, cex=.8)
 cv_tree <- cv.tree(tree_fit); cv_tree
@@ -155,5 +182,19 @@ plot(cv_tree$size, cv_tree$dev, type ="b")
 tree_predict <- predict(tree_fit, newdata = dplyr::select(state_data_test, -Salaries))
 tree_RMSE <- sqrt(mean((tree_predict-state_data_test$Salaries)^2))
 
+predict(tree_fit, newdata = data.frame(Region.Code = "5", Service.Population = 2000000, Circulation.Transactions = 1000000, Library.Visits = 800000, Library.Programs = 8800))
+
+
+
+```
+
+```{r maps, message = FALSE}
+
+map_data <- data_by_library %>% dplyr::select(Library.Name, State, Zip.Code, latitude = Latitude, longitude = Longitude, County.Population)
+
+leaflet(data = map_data) %>% 
+  addTiles %>% 
+  setView(zoom = 7, lng = -78.6821, lat = 35.7847) %>% 
+  addCircleMarkers(clusterOptions = markerClusterOptions(),radius = ~ifelse(County.Population > 500000, 15, 10), color = "green", stroke = FALSE, fillOpacity = .5, label = ~Library.Name, labelOptions = labelOptions(noHide = T, textsize = "12px"))
 ```
 
