@@ -41,40 +41,38 @@ Use: PLS data are useful to researchers, journalists, the public, local practiti
 
 ```{r data_ingest}
 
-
-
 #read in data
 data_by_library <- read_csv("libraries.csv")
 
 data_by_state <- read_csv("states.csv")
 
-#convert columns to factors
-data_by_state$State <- as.factor(data_by_state$State)
-data_by_state$`Region Code` <- as.factor(data_by_state$`Region Code`)
-
 #Fix column names
 colnames(data_by_state) <- make.names(colnames(data_by_state))
 colnames(data_by_library) <- make.names(colnames(data_by_library))
 
+#convert columns to factors
+data_by_state$State <- as.factor(data_by_state$State)
+data_by_state$Region.Code <- as.factor(data_by_state$Region.Code)
+
 #create a new column for total number of libraries
-data_by_state$`Total Libraries` <- data_by_state$`Central Libraries`+data_by_state$`Branch Libraries`
+data_by_state$Total.Libraries <- data_by_state$Central.Libraries+data_by_state$Branch.Libraries
 
 #subset data for southeast region
-data_by_region_se <- data_by_state %>% filter(`Region Code` == "5")
+data_by_region_se <- data_by_state %>% filter(Region.Code == "5")
 ```
 
 ## Data Exploration
 
 ```{r data_summary}
 #Summarize by region
-regional_summary <- data_by_state %>% group_by(`Region Code`) %>% summarise("Average Service Population" = mean(`Service Population`), "Average Service Population per Library" = mean(`Service Population`)/(sum(`Central Libraries`)+sum(`Branch Libraries`)), "Average Library Employees per 10,000 People" = mean(Employees)/sum(`Service Population`)*10000, "Average Collections Spending per 10,000 People" = mean(`Total Collection Expenditures`)/sum(`Service Population`)*10000, "Total Visits" = sum(`Library Visits`))
+regional_summary <- data_by_state %>% group_by(Region.Code) %>% summarise("Average Service Population" = mean(Service.Population), "Average Service Population per Library" = mean(Service.Population)/(sum(Central.Libraries)+sum(Branch.Libraries)), "Average Library Employees per 10,000 People" = mean(Employees)/sum(Service.Population)*10000, "Average Collections Spending per 10,000 People" = mean(Total.Collection.Expenditures)/sum(Service.Population)*10000, "Total Visits" = sum(Library.Visits))
 
 
 #Create groupings of columns
-Staffing <- c("MLS Librarians", "Librarians", "Employees", "Total Staff")
-Finances <- c("Total Staff Expenditures", "Total Operating Expenditures", "Print Collection Expenditures",
-"Digital Collection Expenditures", "Other Collection Expenditures", "Total Collection Expenditures")
-Collections <- c("Print Collection", "Digital Collection", "Audio Collection", "Downloadable Audio", "Physical Video", "Downloadable Video", "State Licensed Databases", "Total Licensed Databases", "Print Subscriptions")
+Staffing <- c("MLS.Librarians", "Librarians", "Employees", "Total.Staff")
+Finances <- c("Total.Staff.Expenditures", "Total.Operating.Expenditures", "Print.Collection.Expenditures",
+"Digital.Collection.Expenditures", "Other.Collection.Expenditures", "Total.Collection.Expenditures")
+Collections <- c("Print.Collection", "Digital.Collection", "Audio.Collection", "Downloadable.Audio", "Physical.Video", "Downloadable.Video", "State.Licensed.Databases", "Total.Licensed.Databases", "Print.Subscriptions")
 
 #Function to create a summary table based on grouped columns
 subset_data <- function(x){
@@ -88,11 +86,11 @@ subset_data(Collections)
 
 #Scatter plot
 
-g <- ggplot(data = data_by_state, aes(x = `Circulation Transactions`, y = `Service Population`, group = `Region Code`))
-g + geom_point(aes(color = `Library Visits`))
+g <- ggplot(data = data_by_state, aes(x = Circulation.Transactions, y = Service.Population, group = Region.Code))
+g + geom_point(aes(color = Library.Visits))
 
-gp <- ggplot(data = data_by_state, aes(x = `Total Staff Expenditures`, y = `Circulation Transactions`))
-gp + geom_point(aes(color = `Region Code`))
+gp <- ggplot(data = data_by_state, aes(x = Total.Staff.Expenditures, y = Circulation.Transactions))
+gp + geom_point(aes(color = Region.Code))
 
 
 
@@ -108,11 +106,11 @@ gp + geom_point(aes(color = `Region Code`))
   
     #Function to subset data by selected region
   subset_by_region <- function(region){
-  data_by_region <- data_by_state %>% filter(`Region Code` == region) 
+  data_by_region <- data_by_state %>% filter(Region.Code == region) 
   }
   
     #Bar chart of selected cost variable by selected region
-  ggplot(data = data_by_region_se, aes(x = `State`, y = `Total Operating Expenditures`/`State Population`)) + ##switch to input$cost_type and input$region
+  ggplot(data = data_by_region_se, aes(x = `State`, y = Total.Operating.Expenditures/State.Population)) + ##switch to input$cost_type and input$region
     geom_bar(stat = "Identity") + 
     ggtitle("Per Capita Public Library Operating Costs for Southeast Region (US).") + ##Switch to dynamic title
     ylab("Dollars Spent per Capita")
@@ -122,7 +120,7 @@ gp + geom_point(aes(color = `Region Code`))
 ```{r PCA}
 
 #Create the PCs. Not to be adjustable by input
-PCs <- prcomp(select(data_by_state, `Service Population`, `Total Libraries`, `Total Staff`, `Local Government Operating Revenue`, `Total Operating Revenue`, `Total Staff Expenditures`, `Print Collection Expenditures`, `Total Collection Expenditures`, `Total Operating Expenditures`, `Print Collection`, `Audio Collection`, `Physical Video`, `Print Subscriptions`, `Hours Open`, `Library Visits`, `Circulation Transactions`, `Library Programs`, `Library Programs`, `Public Internet Computers`, `Internet Computer Use`), center = TRUE, scale = TRUE)
+PCs <- prcomp(select(data_by_state, Service.Population, Total.Libraries, Total.Staff, Local.Government.Operating.Revenue, Total.Operating.Revenue, Total.Staff.Expenditures, Print.Collection.Expenditures, Total.Collection.Expenditures, Total.Operating.Expenditures, Print.Collection, Audio.Collection, Physical.Video, Print.Subscriptions, Hours.Open, Library.Visits, Circulation.Transactions, Library.Programs, Library.Programs, Public.Internet.Computers, Internet.Computer.Use), center = TRUE, scale = TRUE)
 
 #Create the scree plot
 screeplot(PCs, type = "lines")
@@ -172,7 +170,7 @@ bag_RMSE <- sqrt(mean((bag_predict-state_data_test$Salaries)^2))
 
 
 #Simple tree model to predict salary expenditure
-tree_fit <- tree(Salaries ~ ., data = state_data_limited, split = "deviance")
+tree_fit <- tree(Salaries ~ ., data = state_data_limited, split = "deviance", control = tree.control(nobs = nrow(state_data_limited), mincut = 3))
 
 plot(tree_fit)
 text(tree_fit, cex=.8)
@@ -195,6 +193,6 @@ map_data <- data_by_library %>% dplyr::select(Library.Name, State, Zip.Code, lat
 leaflet(data = map_data) %>% 
   addTiles %>% 
   setView(zoom = 7, lng = -78.6821, lat = 35.7847) %>% 
-  addCircleMarkers(clusterOptions = markerClusterOptions(),radius = ~ifelse(County.Population > 500000, 15, 10), color = "green", stroke = FALSE, fillOpacity = .5, label = ~Library.Name, labelOptions = labelOptions(noHide = T, textsize = "12px"))
+  addCircleMarkers(clusterOptions = markerClusterOptions(),radius = ~ifelse(County.Population > 500000, 15, 10), color = "green", stroke = FALSE, fillOpacity = .5, popup = paste("<h4>", map_data$Library.Name,"</h4>", "<br>", "County Pop. = ", map_data$County.Population))
 ```
 
