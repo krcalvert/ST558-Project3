@@ -1,11 +1,12 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+######################################################################
+## R Shiny App to visualize and analyze data from the 2014
+## Public Libraries Survey, featuring:
+## Exploratory data analysis
+## Machine learning with supervised and unsupervised learning models
+## and Geoplotting.
+## 
+## Kristin Calvert - Summer 2019
+######################################################################
 
 library(shiny)
 library(shinydashboard)
@@ -41,7 +42,8 @@ ui <-dashboardPage(skin = "red",
                     fluidRow(
                         column(12, 
                                h2("About the dataset"),
-                               a(href="https://www.imls.gov/research-evaluation/data-collection/public-libraries-survey", "Description taken from IMLS page about the Public Libraries Survey"),
+                               a(href="https://www.imls.gov/research-evaluation/data-collection/public-libraries-survey", 
+                                 "Description taken from IMLS page about the Public Libraries Survey"),
                                br(),
                                box(width = 12, background = "light-blue",
                                    h4("The Public Libraries Survey (PLS) examines when, where, and how library services are changing to meet the needs of the public. These data, supplied annually by public libraries across the country, provide information that policymakers and practitioners can use to make informed decisions about the support and strategic management of libraries."),
@@ -81,7 +83,37 @@ ui <-dashboardPage(skin = "red",
                             )
                         )
                     )
-                )
-            )
-        )
-    )
+                ),
+                
+                #second tab content
+                #data exploration
+                tabItem(tabName ="data",
+                    tabsetPanel(
+                        #sidebar for user inputs
+                        tabPanel("Summary Statistics", 
+                            fluidRow(
+                               #User selects variable sets
+                               column(7,
+                                      selectInput("grouped_columns",h4("Select a Grouping of Variables"), 
+                                           choices = list("Staffing","Finances","Collections"), multiple = FALSE)),
+                                                                          
+                                #Save Button to download csv of data table
+                                column(5, 
+                                       br(),
+                                       br(),
+                                       downloadButton("download_DT", "Download"))
+                            ),
+                             fluidRow(
+                                box(width = 12,
+                                    #Dynamic UI title
+                                    uiOutput("DT_title"),
+                                    #Data table of summary statistics
+                                    dataTableOutput("summary_data_table")
+                                )
+                            )
+                        ) #end tabPanel
+                    ) #end tabsetPanel
+                ) #end tabItem "data"
+            ) #end tabItems
+        ) #end dashboardBody
+    ) #end dashboardPage

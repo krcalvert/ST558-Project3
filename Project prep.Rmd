@@ -37,7 +37,7 @@ Frequency: Collected annually since 1988. (Data files are available since 1992.)
 
 Methods: At the state level, PLS is administered by Data Coordinators, appointed by the chief officer of the state library agency from each state or outlying area. State Data Coordinators collect the requested data from local public libraries and report these data to us via a web-based reporting system.
 
-Use: PLS data are useful to researchers, journalists, the public, local practitioners, and policymakers at the federal, state, and local levels, and are used for planning, evaluation, and policy making. Download the datasets in multiple formats below, or use our online Library Search & Compare tool to find a library and browse the latest available data. Browse over 25 years’ worth of research publications about the Public Libraries Survey (PLS).
+Use: PLS data are useful to researchers, journalists, the public, local practitioners, and policymakers at the federal, state, and local levels, and are used for planning, evaluation, and policy making. Download the datasets in multiple formats below, or use our online Library Search & Compare tool to find a library and browse the latest available data. Browse over 25 years’ worth of research publications about the Public Libraries Survey (PLS). 
 
 ```{r data_ingest}
 
