@@ -111,6 +111,34 @@ ui <-dashboardPage(skin = "red",
                                     dataTableOutput("summary_data_table")
                                 )
                             )
+                        ), #end tabPanel
+                        tabPanel("Scatter Plot",
+                                 fluidRow(
+                                        #User selects x and y variables
+                                         column(7,
+                                                selectInput("xaxis",h4("X-axis variable"),
+                                                            choices = list("Circulation Transactions" = "Circulation.Transactions", 
+                                                                           "Library Visits" = "Library.Visits", 
+                                                                           "Number of Books" = "Print.Collection"), multiple = FALSE),
+                                                selectInput("yaxis",h4("Y-axis variable"),
+                                                            choices = list("Total Staff Expenditures" = "Total.Staff.Expenditures", 
+                                                                           "Library Users" = "Service.Population", 
+                                                                           "Number of Libraries" = "Total.Libraries"), multiple = FALSE),
+                                                checkboxInput("sp_color", label = "Add color for region?", value = FALSE)
+                                         ),
+                                        #Save button to download scatter plot
+                                        column(5,
+                                               br(),
+                                               br(),
+                                               downloadButton("download_SP", "Download Plot")
+                                               )
+                                ), 
+                                fluidRow(
+                                        box(width = 12,
+                                            #Scatter plot with user-inputted variables
+                                            plotOutput("scatter_plot", click = "plot_click"),
+                                            verbatimTextOutput("xy"))
+                                ) 
                         ) #end tabPanel
                     ) #end tabsetPanel
                 ) #end tabItem "data"
