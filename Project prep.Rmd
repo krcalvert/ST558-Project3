@@ -42,7 +42,7 @@ Use: PLS data are useful to researchers, journalists, the public, local practiti
 ```{r data_ingest}
 
 #read in data
-data_by_library <- read_csv("libraries.csv")
+data_by_library <- read_csv("PLS/libraries.csv")
 
 data_by_state <- read_csv("states.csv")
 

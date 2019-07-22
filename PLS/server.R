@@ -8,12 +8,17 @@ library(DT)
 library(tree)
 library(leaflet)
 library(plotly)
+library(kableExtra)
+library(htmlwidgets)
+
+
+options(knitr.table.format = "html") 
 
 # Data ingest
 # Load csv files and format the columns
 
 #read in data
-data_by_library <- read_csv("libraries.csv")
+data_by_library <- suppressMessages(read_csv("libraries.csv"))
 
 data_by_state <- read_csv("states.csv")
 
@@ -27,6 +32,13 @@ data_by_state$Region.Code <- as.factor(data_by_state$Region.Code)
 
 #create a new column for total number of libraries
 data_by_state$Total.Libraries <- data_by_state$Central.Libraries+data_by_state$Branch.Libraries
+
+#principal components analysis (PCA) model
+PCs <- prcomp(select(data_by_state, Service.Population, Total.Libraries, Total.Staff, Local.Government.Operating.Revenue, 
+                     Total.Operating.Revenue, Total.Staff.Expenditures, Print.Collection.Expenditures, Total.Collection.Expenditures, 
+                     Total.Operating.Expenditures, Print.Collection, Audio.Collection, Physical.Video, Print.Subscriptions, 
+                     Hours.Open, Library.Visits, Circulation.Transactions, Library.Programs, Library.Programs, 
+                     Public.Internet.Computers, Internet.Computer.Use), center = TRUE, scale = TRUE)
 
 
 #Shiny server dynamic code
@@ -102,5 +114,64 @@ shinyServer(function(input, output, session) {
            ggsave(file, sp())
         }
     )
+    
+    ## PCA
+    
+    #Create Biplot
+    ##Must add user input to view PCs
+    plot_biplot <- reactive({
+        PC1 <- input$first_PC
+        PC2 <- input$second_PC
+        biplot(PCs, xlabs = rep(".", nrow(data_by_state)), choices = c(PC1,PC2), cex = .6)
+    })
+    
+    output$biplot <- renderPlot({
+        plot_biplot()
+    })
+    
+    #Dynamic table of PCs and loadings
+    pc_table <- reactive({
+        PC1 <- input$first_PC
+        PC2 <- input$second_PC
+        kable(PCs$rotation[,c(PC1,PC2)]) %>%
+                kable_styling("striped", full_width = F)
+    })
+    
+    #output html table
+    output$PCA_data <- renderText({
+        pc_table()
+    })
+    
+    # Downloadable png of biplot
+    output$download_biplot <- downloadHandler(
+        filename = function(){
+            paste(input$first_PC, "_", input$second_PC, "_biplot.png", sep = "")
+        },
+        content = function(file){
+            ggsave(file, plot_biplot())
+        }
+    )
+
+    # Downloadable csv of PCA table
+    output$download_PCs <- downloadHandler(
+        filename = function(){
+            paste("PC", input$first_PC, "_PC", input$second_PC, ".html", sep = "")
+        },
+        content = function(file){
+           temp_report <- file.path("PSL", "report.RMD")
+           file.copy("report.RMD", temp_report, overwrite = TRUE)
+           params <- plot_biplot()
+               
+           rmarkdown::render(temp_report, output_file = file,
+                             params = params,
+                             envir = new.env(parent = globalenv())
+           )
+        }
+    )
+        #error if first_PC = second_PC
+    #conditionalPanel(
+    #    condition = "first_PC" == "second_PC",
+    #    h3("Stop! You must select two different PCs", style = "color:red")
+    #)
 })
 

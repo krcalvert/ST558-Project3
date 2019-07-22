@@ -11,6 +11,7 @@
 library(shiny)
 library(shinydashboard)
 
+
 ui <-dashboardPage(skin = "red",
         #Dashboard title
         dashboardHeader(title = "Public Libraries Survey, 2014", titleWidth = 300),
@@ -46,18 +47,31 @@ ui <-dashboardPage(skin = "red",
                                  "Description taken from IMLS page about the Public Libraries Survey"),
                                br(),
                                box(width = 12, background = "light-blue",
-                                   h4("The Public Libraries Survey (PLS) examines when, where, and how library services are changing to meet the needs of the public. These data, supplied annually by public libraries across the country, provide information that policymakers and practitioners can use to make informed decisions about the support and strategic management of libraries."),
+                                   h4("The Public Libraries Survey (PLS) examines when, where, and how library services are changing to 
+                                      meet the needs of the public. These data, supplied annually by public libraries across the country, 
+                                      provide information that policymakers and practitioners can use to make informed decisions about 
+                                      the support and strategic management of libraries."),
                                    h4("Purpose: The survey provides statistics on the status of public libraries in the United States."),
                                    
-                                   h4("Coverage: The data are collected from approximately 9,000 public libraries with approximately 17,000 individual public library outlets (main libraries, branches, and bookmobiles) in the 50 states, the District of Columbia, and outlying territories."),
+                                   h4("Coverage: The data are collected from approximately 9,000 public libraries with approximately 
+                                      17,000 individual public library outlets (main libraries, branches, and bookmobiles) in the 50 states, 
+                                      the District of Columbia, and outlying territories."),
                                    
-                                   h4("Content: Data includes information about library visits, circulation, size of collections, public service hours, staffing, electronic resources, operating revenues and expenditures and number of service outlets. Learn more about PLS data element definitions."),
+                                   h4("Content: Data includes information about library visits, circulation, size of collections, public
+                                      service hours, staffing, electronic resources, operating revenues and expenditures and number of 
+                                      service outlets."),
                                    
                                    h4("Frequency: Collected annually since 1988. (Data files are available since 1992.)"),
                                    
-                                   h4("Methods: At the state level, PLS is administered by Data Coordinators, appointed by the chief officer of the state library agency from each state or outlying area. State Data Coordinators collect the requested data from local public libraries and report these data to us via a web-based reporting system."),
+                                   h4("Methods: At the state level, PLS is administered by Data Coordinators, appointed by the chief officer
+                                      of the state library agency from each state or outlying area. State Data Coordinators collect the 
+                                      requested data from local public libraries and report these data to us via a web-based reporting system."),
                                    
-                                   h4("Use: PLS data are useful to researchers, journalists, the public, local practitioners, and policymakers at the federal, state, and local levels, and are used for planning, evaluation, and policy making. Download the datasets in multiple formats below, or use our online Library Search & Compare tool to find a library and browse the latest available data. Browse over 25 years’ worth of research publications about the Public Libraries Survey (PLS).")
+                                   h4("Use: PLS data are useful to researchers, journalists, the public, local practitioners, and policymakers
+                                      at the federal, state, and local levels, and are used for planning, evaluation, and policy making. Download
+                                      the datasets in multiple formats below, or use our online Library Search & Compare tool to find a library
+                                      and browse the latest available data. Browse over 25 years’ worth of research publications about the Public
+                                      Libraries Survey (PLS).")
                                 )
                         )
                     ),
@@ -79,11 +93,9 @@ ui <-dashboardPage(skin = "red",
                                 br(),
                                 "Summer 2019",
                                 br(),
-                                "Project 3"
-                            )
+                                "Project 3"))
                         )
-                    )
-                ),
+                ), #end tabitem info
                 
                 #second tab content
                 #data exploration
@@ -111,7 +123,8 @@ ui <-dashboardPage(skin = "red",
                                     dataTableOutput("summary_data_table")
                                 )
                             )
-                        ), #end tabPanel
+                        ), #end tabPanel summary stats
+                        
                         tabPanel("Scatter Plot",
                                  fluidRow(
                                         #User selects x and y variables
@@ -139,9 +152,48 @@ ui <-dashboardPage(skin = "red",
                                             plotOutput("scatter_plot", click = "plot_click"),
                                             verbatimTextOutput("xy"))
                                 ) 
-                        ) #end tabPanel
+                        ) #end tabPanel scatter plot
+                        #####BARPLOT GOES HERE$$$$$$
                     ) #end tabsetPanel
-                ) #end tabItem "data"
+                ), #end tabItem "data"
+                
+                #third tab for PCA
+                tabItem(tabName = "pca",
+                         fluidRow(
+                                 #User selects PCs
+                                 column(9,
+                                        fluidRow(
+                                                includeHTML("PCA.html")
+                                                ),
+                                        fluidRow(
+                                                column(6,
+                                                        numericInput("first_PC", h4("Select Principal Components for Biplot"), 
+                                                                value = 1, min = 1, max = 5)),
+                                                column(6,
+                                                        numericInput("second_PC", h4("Select Principal Components for Biplot"), 
+                                                                value = 2, min = 1, max = 5))
+                                                )
+                                        ),
+                                 #Save Button to download biplot or table
+                                 column(3, 
+                                        downloadButton("download_biplot", "Download Plot"),
+                                        br(),
+                                        br(),
+                                        downloadButton("download_PCs", "Download Table")
+                                        )
+                                ),
+                        fluidRow(
+                                #biplot
+                                column(6,
+                                       box(width = 12,
+                                           plotOutput("biplot"))),
+                                
+                                #PC table of loadings
+                                column(6,
+                                       box(width = 12,
+                                           htmlOutput("PCA_data")))
+                                )
+                ) #end tabItem pca
             ) #end tabItems
         ) #end dashboardBody
     ) #end dashboardPage
