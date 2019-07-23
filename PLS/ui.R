@@ -152,10 +152,37 @@ ui <-dashboardPage(skin = "red",
                                             plotOutput("scatter_plot", click = "plot_click"),
                                             verbatimTextOutput("xy"))
                                 ) 
-                        ) #end tabPanel scatter plot
-                        #####BARPLOT GOES HERE$$$$$$
-                    ) #end tabsetPanel
-                ), #end tabItem "data"
+                        ), #end tabPanel scatter plot
+                        
+                        tabPanel("Bar Chart",
+                                fluidRow(
+                                        #user selects region
+                                        column(7,
+                                               selectInput("region", h4("Select a US Region"),
+                                                           choices = list("New England (CT ME MA NH RI VT)",
+                                                                          "Mid East (DE DC MD NH NY PA)",
+                                                                          "Great Lakes (IL IN MI OH WI)",
+                                                                          "Plains (IA KS MN MO NE ND SD)",
+                                                                          "Southeast (AL AR FL GA KY L MS NC SC TN VA WV)",
+                                                                          "Southwest (AZ NM OK TX)",
+                                                                          "Rocky Mountains (CO ID MT UT WY)",
+                                                                          "Far West (AK CA HI NV OR WA)"), multiple = FALSE)
+                                                ),
+                                        #Save button to download bar chart
+                                         column(5,
+                                                br(),
+                                                br(),
+                                               downloadButton("download_bar", "Download Chart")
+                                               )
+                                        ),
+                                 fluidRow(
+                                         box(width = 12,
+                                             #bar chart with user-selected region
+                                             plotlyOutput("bar_chart"))
+                                        )
+                                 ) #end tabItem barchart 
+                            ) #end tabsetPanel
+                        ), #end tabItem "data"
                 
                 #third tab for PCA
                 tabItem(tabName = "pca",

@@ -7,9 +7,9 @@ library(knitr)
 library(DT)
 library(tree)
 library(leaflet)
-library(plotly)
+suppressWarnings(library(plotly))
 library(kableExtra)
-library(htmlwidgets)
+library(ggfortify)
 
 
 options(knitr.table.format = "html") 
@@ -18,9 +18,9 @@ options(knitr.table.format = "html")
 # Load csv files and format the columns
 
 #read in data
-data_by_library <- suppressMessages(read_csv("libraries.csv"))
+data_by_library <- suppressWarnings(suppressMessages(read_csv("libraries.csv")))
 
-data_by_state <- read_csv("states.csv")
+data_by_state <- suppressMessages(read_csv("states.csv"))
 
 #Fix column names
 colnames(data_by_state) <- make.names(colnames(data_by_state))
@@ -115,14 +115,50 @@ shinyServer(function(input, output, session) {
         }
     )
     
-    ## PCA
+    #### Bar chart
+    
+    # SUbset data by region
+    subset_region_plot <- reactive({
+        region <- switch(input$region, 
+                         "New England (CT ME MA NH RI VT)" = 1, 
+                         "Mid East (DE DC MD NH NY PA)" = 2, 
+                         "Great Lakes (IL IN MI OH WI)" = 3, 
+                         "Plains (IA KS MN MO NE ND SD)" = 4, 
+                         "Southeast (AL AR FL GA KY L MS NC SC TN VA WV)" = 5, 
+                         "Southwest (AZ NM OK TX)" = 6,
+                         "Rocky Mountains (CO ID MT UT WY)" = 7,
+                         "Far West (AK CA HI NV OR WA)" = 8) 
+        subset_by_region <- data_by_state %>% filter(Region.Code == region)
+        
+        ggplot(data = subset_by_region, aes(x = State, y = Total.Operating.Expenditures/State.Population)) + 
+            geom_bar(stat = "Identity", fill = "red") + 
+            ggtitle(paste("Per Capita Public Library Operating Costs for ", input$region, ".", sep = "")) +
+            ylab("Dollars Spent per Capita")
+    })
+    
+    output$bar_chart <- renderPlotly({
+        subset_region_plot()
+    })
+    
+    # Download png of chart
+    output$download_bar <- downloadHandler(
+        filename = function(){
+            paste(input$region, ".png", sep = "")
+        },
+        content = function(file){
+            ggsave(file, subset_region_plot())
+        }
+    )
+
+        
+    #### PCA
     
     #Create Biplot
     ##Must add user input to view PCs
     plot_biplot <- reactive({
         PC1 <- input$first_PC
         PC2 <- input$second_PC
-        biplot(PCs, xlabs = rep(".", nrow(data_by_state)), choices = c(PC1,PC2), cex = .6)
+        autoplot(PCs, x = PC1, y = PC2, scale = 0, loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3)
     })
     
     output$biplot <- renderPlot({
@@ -155,23 +191,14 @@ shinyServer(function(input, output, session) {
     # Downloadable csv of PCA table
     output$download_PCs <- downloadHandler(
         filename = function(){
-            paste("PC", input$first_PC, "_PC", input$second_PC, ".html", sep = "")
+            paste("PC", input$first_PC, "_PC", input$second_PC, ".csv", sep = "")
         },
         content = function(file){
-           temp_report <- file.path("PSL", "report.RMD")
-           file.copy("report.RMD", temp_report, overwrite = TRUE)
-           params <- plot_biplot()
-               
-           rmarkdown::render(temp_report, output_file = file,
-                             params = params,
-                             envir = new.env(parent = globalenv())
-           )
-        }
-    )
-        #error if first_PC = second_PC
-    #conditionalPanel(
-    #    condition = "first_PC" == "second_PC",
-    #    h3("Stop! You must select two different PCs", style = "color:red")
-    #)
+            PC1 <- input$first_PC
+            PC2 <- input$second_PC
+            write.csv(PCs$rotation[,c(PC1,PC2)], file, row.names = FALSE)
+            }
+        )
+
 })
 
