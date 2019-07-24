@@ -101,7 +101,23 @@ ui <-dashboardPage(skin = "red",
                 #data exploration
                 tabItem(tabName ="data",
                     tabsetPanel(
-                        #sidebar for user inputs
+                        #View data set
+                        tabPanel("All State Data",
+                                column(9,
+                                    fluidRow(
+                                        uiOutput("all_data_title"))),
+                                column(3,
+                                    fluidRow(
+                                        br(),
+                                        downloadButton("all_data_download"),
+                                        br()
+                                        )),
+                                column(12,
+                                       fluidRow(
+                                        dataTableOutput("all_state_data")
+                                        ))
+                        ), #end tabPanel alldata
+                        #Calculate summary statistics
                         tabPanel("Summary Statistics", 
                             fluidRow(
                                #User selects variable sets
@@ -199,6 +215,10 @@ ui <-dashboardPage(skin = "red",
                                                 column(6,
                                                         numericInput("second_PC", h4("Select Principal Components for Biplot"), 
                                                                 value = 2, min = 1, max = 5))
+                                                ),
+                                        fluidRow(
+                                                column(12,
+                                                       checkboxInput("scale_pca", label = "Scale variables?"))
                                                 )
                                         ),
                                  #Save Button to download biplot or table
@@ -220,7 +240,21 @@ ui <-dashboardPage(skin = "red",
                                        box(width = 12,
                                            htmlOutput("PCA_data")))
                                 )
-                ) #end tabItem pca
+                ), #end tabItem pca
+                tabItem("glm",
+                        column(9,
+                               box(width = 12,
+                                       selectInput("linear_vars", label = h4("Select predictor for Library Visits"),
+                                                   choices = list("Print.Collection", "Digital.Collection", 
+                                                                  "Audio.Collection", "Hours.Open", "Registered Users", "Region.Code")),
+                               checkboxInput("pi", label = "Include prediction interval?"))),
+                        column(3,
+                               downloadButton("slr_plot_download", "Download Plot")),
+                        fluidRow(
+                                box(width = 11,
+                                    plotOutput("slr_plot"))
+                                )
+                        ) #end tabItem glm
             ) #end tabItems
         ) #end dashboardBody
     ) #end dashboardPage

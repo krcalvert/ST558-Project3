@@ -7,9 +7,10 @@ library(knitr)
 library(DT)
 library(tree)
 library(leaflet)
-suppressWarnings(library(plotly))
+library(plotly)
 library(kableExtra)
 library(ggfortify)
+library(ciTools)
 
 
 options(knitr.table.format = "html") 
@@ -18,9 +19,9 @@ options(knitr.table.format = "html")
 # Load csv files and format the columns
 
 #read in data
-data_by_library <- suppressWarnings(suppressMessages(read_csv("libraries.csv")))
+data_by_library <- read_csv("libraries.csv")
 
-data_by_state <- suppressMessages(read_csv("states.csv"))
+data_by_state <- read_csv("states.csv")
 
 #Fix column names
 colnames(data_by_state) <- make.names(colnames(data_by_state))
@@ -45,8 +46,28 @@ PCs <- prcomp(select(data_by_state, Service.Population, Total.Libraries, Total.S
 shinyServer(function(input, output, session) {
     
     ###Datatable
+    # Create title for full datatable
+    output$all_data_title <- renderUI({
+        h3("Aggregated Public Library Data by State")
+    })
     
-    # Create title for datatable
+    # Create data table for all_state_date
+    output$all_state_data <- DT::renderDataTable(
+        data_by_state,
+        options = list(scrollX = TRUE)
+    )
+    
+    # Download button for all_State_data
+    output$all_data_download <- downloadHandler(
+        filename = ("PLS State Data.csv"),
+        content = function(file){
+            write.csv(data_by_state, file, row.names = FALSE)
+        }
+    )
+    
+    ###Summary Stats
+    
+    # Create title for summary datatable
     output$DT_title <- renderUI({
         group_name <- input$grouped_columns
         h3(paste("State-Level Summary Statistics for", group_name, "Variables"))
@@ -158,7 +179,14 @@ shinyServer(function(input, output, session) {
     plot_biplot <- reactive({
         PC1 <- input$first_PC
         PC2 <- input$second_PC
-        autoplot(PCs, x = PC1, y = PC2, scale = 0, loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3)
+        validate(
+            need(PC1 != PC2, "Please select distinct principal components.")
+        )
+        if(input$scale_pca){
+            autoplot(PCs, x = PC1, y = PC2, scale = 0, loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3)
+        }else{
+            autoplot(PCs, x = PC1, y = PC2, loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3)
+        }
     })
     
     output$biplot <- renderPlot({
@@ -199,6 +227,37 @@ shinyServer(function(input, output, session) {
             write.csv(PCs$rotation[,c(PC1,PC2)], file, row.names = FALSE)
             }
         )
+    
+    ### Supervised Models
+    
+    ### Simple Linear Regression
+    
+    slr <- reactive({
+#        pred <- input$linear_vars
+#        switch(input$linear_vars, 
+#                       "Print Collection" = "Print.Collection", 
+#                       "Digital Collection" = "Digital.Collection",
+#                       "Audio Collection" = "Audio.Collection",
+#                       "Hours Open" = "Hours.Open", 
+#                       "Registered Users" = "Registered.Users",
+#                       "Region Code" = "Region.Code")
+        
+        fit <- lm(Library.Visits ~ input$linear_vars, data = data_by_state)
+        
+        data_by_state <- data_by_state %>% ciTools::add_pi(fit, names = c("lower", "upper"))
+        
+        gp <- ggplot(data_by_state, aes(x = input$linear_vars, y = Library.Visits)) +
+            geom_point() +
+            geom_smooth(method = "lm", fill = "Blue") +
+            geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3, fill = "Red") +
+            ggtitle("Scatter plot with 95% PI & 95% CI")
+            
+        print(gp)
+    })
+    
+    output$slr_plot <- renderPlot({
+        slr()
+    })
 
 })
 
