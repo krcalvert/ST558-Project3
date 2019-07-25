@@ -210,10 +210,10 @@ ui <-dashboardPage(skin = "red",
                                                 ),
                                         fluidRow(
                                                 column(6,
-                                                        numericInput("first_PC", h4("Select Principal Components for Biplot"), 
+                                                        numericInput("first_PC", h4("Select 1st Principal Components for Biplot"), 
                                                                 value = 1, min = 1, max = 5)),
                                                 column(6,
-                                                        numericInput("second_PC", h4("Select Principal Components for Biplot"), 
+                                                        numericInput("second_PC", h4("Select 2nd Principal Components for Biplot"), 
                                                                 value = 2, min = 1, max = 5))
                                                 ),
                                         fluidRow(
@@ -241,19 +241,45 @@ ui <-dashboardPage(skin = "red",
                                            htmlOutput("PCA_data")))
                                 )
                 ), #end tabItem pca
-                tabItem("glm",
-                        column(9,
-                               box(width = 12,
-                                       selectInput("linear_vars", label = h4("Select predictor for Library Visits"),
-                                                   choices = list("Print.Collection", "Digital.Collection", 
-                                                                  "Audio.Collection", "Hours.Open", "Registered Users", "Region.Code")),
-                               checkboxInput("pi", label = "Include prediction interval?"))),
-                        column(3,
-                               downloadButton("slr_plot_download", "Download Plot")),
-                        fluidRow(
-                                box(width = 11,
-                                    plotOutput("slr_plot"))
-                                )
+
+                        tabItem("glm",
+                           tabsetPanel(
+                                   tabPanel("Simple Linear Regression",
+                                        fluidRow(
+                                           column(5,
+                                                selectInput("linear_vars", label = h4("Select predictor variable"),
+                                                            choices = list("Print Collection" = "Print.Collection", 
+                                                                  "Digital Collection" = "Digital.Collection", 
+                                                                  "Audio Collection" = "Audio.Collection",
+                                                                  "Hours Open" = "Hours.Open", 
+                                                                  "Registered Users" = "Registered.Users",
+                                                                  "Total Libraries" = "Total.Libraries"),
+                                                    selected = 1, multiple = FALSE),
+                                                selectInput("linear_resp", label = h4("Select response variable"),
+                                                            choices = list("Library Visits" = "Library.Visits",
+                                                                   "Salaries",
+                                                                   "Circulation Transactions"  = "Circulation.Transactions")),
+                                                checkboxInput("pi", label = "Include prediction interval?"),
+                                                downloadButton("slr_plot_download", "Download Plot")),
+                                            column(7,
+                                                br(),
+                                                sliderInput("pred_slr_value", label ="Enter a value for selected predictor",
+                                                            min = 1, max = 100000000, value = 500000, step = 10000),
+                                                uiOutput("predict_slr_title"),
+                                                box(width = 8,
+                                                   textOutput("pred_response")
+                                                   ),
+                                                br(),
+                                                br(),
+                                                br(),
+                                                br())
+                                                ),
+                                        fluidRow(
+                                                box(width = 11,
+                                                    plotOutput("slr_plot"))
+                                                )
+                                   ) #end tabPanel
+                              ) #end tabsetPanel
                         ) #end tabItem glm
             ) #end tabItems
         ) #end dashboardBody

@@ -1,19 +1,6 @@
 #
 #
 
-library(shiny)
-library(tidyverse)
-library(knitr)
-library(DT)
-library(tree)
-library(leaflet)
-library(plotly)
-library(kableExtra)
-library(ggfortify)
-library(ciTools)
-
-
-options(knitr.table.format = "html") 
 
 # Data ingest
 # Load csv files and format the columns
@@ -233,25 +220,31 @@ shinyServer(function(input, output, session) {
     ### Simple Linear Regression
     
     slr <- reactive({
-#        pred <- input$linear_vars
-#        switch(input$linear_vars, 
-#                       "Print Collection" = "Print.Collection", 
-#                       "Digital Collection" = "Digital.Collection",
-#                       "Audio Collection" = "Audio.Collection",
-#                       "Hours Open" = "Hours.Open", 
-#                       "Registered Users" = "Registered.Users",
-#                       "Region Code" = "Region.Code")
-        
-        fit <- lm(Library.Visits ~ input$linear_vars, data = data_by_state)
+        pred <- unlist(data_by_state[,input$linear_vars])
+        resp <- unlist(data_by_state[,input$linear_resp])
+
+        fit <- lm(resp ~ pred, data = data_by_state)
         
         data_by_state <- data_by_state %>% ciTools::add_pi(fit, names = c("lower", "upper"))
         
-        gp <- ggplot(data_by_state, aes(x = input$linear_vars, y = Library.Visits)) +
-            geom_point() +
-            geom_smooth(method = "lm", fill = "Blue") +
-            geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3, fill = "Red") +
-            ggtitle("Scatter plot with 95% PI & 95% CI")
-            
+        if(input$pi){
+            gp <- ggplot(data_by_state, aes(x = pred, y = resp)) +
+                geom_point() +
+                geom_smooth(method = "lm", fill = "Blue") +
+                geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3, fill = "Red") +
+                xlab(deparse(input$linear_vars)) + 
+                ylab(deparse(input$linear_resp)) +
+                scale_x_continuous(labels = scales::comma) + scale_y_continuous(labels = scales::comma) +
+                ggtitle("Scatter plot with 95% PI & 95% CI")
+        } else {
+            gp <- ggplot(data_by_state, aes(x = pred, y = resp)) +
+                geom_point() +
+                geom_smooth(method = "lm", fill = "Blue") +
+                xlab(deparse(input$linear_vars)) +
+                ylab(deparse(input$linear_resp)) +
+                scale_x_continuous(labels = scales::comma) + scale_y_continuous(labels = scales::comma) +
+                ggtitle("Scatter plot with 95% CI")
+        }
         print(gp)
     })
     
@@ -259,5 +252,34 @@ shinyServer(function(input, output, session) {
         slr()
     })
 
+    # Downloadable png of slr plot
+    output$slr_plot_download <- downloadHandler(
+        filename = function(){
+            paste(input$linear_resp, "_", input$linear_vars, "_plot.png", sep = "")
+        },
+        content = function(file){
+            ggsave(file, slr())
+        }
+    )
+    # SLR prediction title
+    output$predict_slr_title <- renderUI({
+        p(strong("Predicted value for response variable"))
+    })
+    
+    #change slider max
+    observe({
+        val <- max(data_by_state[,input$linear_vars])
+        updateSliderInput(session, "pred_slr_value", value = val/2, max = val, step = val/100)
+    })
+    
+    # Calculate prediction for SLR
+    output$pred_response <- renderText({
+        pred <- unlist(data_by_state[,input$linear_vars])
+        resp <- unlist(data_by_state[,input$linear_resp])
+        fit <- lm(resp ~ pred, data = data_by_state)
+        new <- data.frame(pred = input$pred_slr_value)
+        y <- predict(fit, newdata = new)
+        paste0(deparse(input$linear_resp), " = ", scales::comma(round(y,2)))
+    })
 })
 
