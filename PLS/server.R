@@ -28,6 +28,14 @@ PCs <- prcomp(select(data_by_state, Service.Population, Total.Libraries, Total.S
                      Hours.Open, Library.Visits, Circulation.Transactions, Library.Programs, Library.Programs, 
                      Public.Internet.Computers, Internet.Computer.Use), center = TRUE, scale = TRUE)
 
+#subset data for regression tree
+  #select numeric variables only and exclude variables with zero variance
+state_data_limited <- data_by_state %>% dplyr::select(-Submission.Year, -State.Code, -Region.Code) %>% dplyr::select_if(is.numeric) 
+
+
+#subset of data for map
+map_data <- data_by_library %>% dplyr::select(Library.Name, State, Zip.Code, latitude = Latitude, longitude = Longitude, County.Population)
+
 
 #Shiny server dynamic code
 shinyServer(function(input, output, session) {
@@ -220,24 +228,24 @@ shinyServer(function(input, output, session) {
     ### Simple Linear Regression
     
     slr <- reactive({
-        pred <- unlist(data_by_state[,input$linear_vars])
-        resp <- unlist(data_by_state[,input$linear_resp])
+        pred <- as.matrix(data_by_state[input$linear_vars])
+        resp <- as.matrix(data_by_state[input$linear_resp])
+        newdf <- data.frame(pred,resp)
+        fit <- lm(resp ~ pred)
+        
+        newdf <- ciTools::add_pi(newdf, fit, names = c("lower", "upper"))
 
-        fit <- lm(resp ~ pred, data = data_by_state)
-        
-        data_by_state <- data_by_state %>% ciTools::add_pi(fit, names = c("lower", "upper"))
-        
         if(input$pi){
-            gp <- ggplot(data_by_state, aes(x = pred, y = resp)) +
+            gp <- ggplot(newdf, aes_string(x = input$linear_vars, y = input$linear_resp)) +
                 geom_point() +
                 geom_smooth(method = "lm", fill = "Blue") +
-                geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3, fill = "Red") +
+                geom_ribbon(aes_string(ymin = newdf$lower, ymax = newdf$upper), alpha = 0.3, fill = "Red") +
                 xlab(deparse(input$linear_vars)) + 
                 ylab(deparse(input$linear_resp)) +
                 scale_x_continuous(labels = scales::comma) + scale_y_continuous(labels = scales::comma) +
                 ggtitle("Scatter plot with 95% PI & 95% CI")
         } else {
-            gp <- ggplot(data_by_state, aes(x = pred, y = resp)) +
+            gp <- ggplot(newdf, aes_string(x = input$linear_vars, y = input$linear_resp)) +
                 geom_point() +
                 geom_smooth(method = "lm", fill = "Blue") +
                 xlab(deparse(input$linear_vars)) +
@@ -280,6 +288,56 @@ shinyServer(function(input, output, session) {
         new <- data.frame(pred = input$pred_slr_value)
         y <- predict(fit, newdata = new)
         paste0(deparse(input$linear_resp), " = ", scales::comma(round(y,2)))
+    })
+    
+    ### Regression Tree
+    tree_model <- reactive({
+      #user selects seed
+      set.seed(input$seed)
+      
+      #subset date into test and training sets
+      train <- sample(1:nrow(state_data_limited), size = nrow(state_data_limited)*.8)
+      test <- dplyr::setdiff(1:nrow(state_data_limited), train)
+      
+      state_data_train <- state_data_limited[train,]
+      state_data_test <- state_data_limited[test,]
+      
+      #train model
+      train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+      
+      #user selects number of response variable and the number of trees
+      
+      grid <- expand.grid(maxdepth = input$ntrees)
+      
+      # pred <- as.matrix(data_by_state[input$linear_vars])
+      # resp <- as.matrix(data_by_state[input$linear_resp])
+      # newdf <- data.frame(pred,resp)
+      # fit <- lm(resp ~ pred)
+      
+      tree_response <- as.matrix(state_data_train[,input$Resp])
+      
+      tree_fit <- train(as.matrix(state_data_train[,input$Resp]) ~ state_data_train$Total.Libraries, 
+                        data = state_data_train,
+                        method = "rpart2",
+                        trControl = train_control,
+                        tuneGrid = grid)
+      fancyRpartPlot(tree_fit$finalModel)
+
+    })
+    
+    output$tree_plot <- renderPlot({
+      tree_model()
+    })
+    
+    ###leaflet map
+    output$lib_map <- renderLeaflet({
+        leaflet(data = map_data) %>% 
+        addTiles %>% 
+        setView(zoom = 7, lng = -78.6821, lat = 35.7847) %>% 
+        addCircleMarkers(clusterOptions = markerClusterOptions(),
+                         radius = ~ifelse(County.Population > 500000, 15, 10), 
+                         color = "green", stroke = FALSE, fillOpacity = .5, 
+                         popup = paste("<h4>", map_data$Library.Name,"</h4>", "<br>", "County Pop. = ", map_data$County.Population))
     })
 })
 

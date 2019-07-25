@@ -13,7 +13,6 @@ library(knitr)
 library(DT)
 library(caret)
 library(randomForest)
-library(tree)
 library(leaflet)
 ```
 
@@ -149,7 +148,23 @@ kable(PCs$rotation[,c("PC1","PC2")])
 
 #Exclude columns with no variance
 
-state_data_limited <- data_by_state %>% dplyr::select(Salaries, Region.Code, Service.Population, Circulation.Transactions, Library.Visits, Library.Programs)
+state_data_limited <- data_by_state %>% dplyr::select_if(is.numeric) %>% dplyr::select(-Submission.Year, -State.Code, -Region.Code)
+
+train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+tree_fit <- train(Library.Visits ~ ., data = state_data_train,
+                  method = "rpart2",
+                  trControl = train_control,
+                  tuneGrid = grid)
+
+grid <- expand.grid(maxdepth = 5)
+
+set.seed(input$seed)
+train <- sample(1:nrow(state_data_limited), size = nrow(state_data_limited)*.8)
+test <- dplyr::setdiff(1:nrow(state_data_limited), train)
+
+state_data_train <- state_data_limited[train,]
+state_data_test <- state_data_limited[test,]
+
 
 #Create training and test sets
 set.seed(250)
@@ -184,6 +199,8 @@ tree_RMSE <- sqrt(mean((tree_predict-state_data_test$Salaries)^2))
 
 predict(tree_fit, newdata = data.frame(Region.Code = "5", Service.Population = 2000000, Circulation.Transactions = 1000000, Library.Visits = 800000, Library.Programs = 8800))
 
+
+fancyRpartPlot(tree_fit$finalModel)
 
 
 ```
