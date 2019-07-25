@@ -257,7 +257,7 @@ ui <-dashboardPage(skin = "red",
                                                     selected = 1, multiple = FALSE),
                                                 selectInput("linear_resp", label = h4("Select response variable"),
                                                             choices = list("Library Visits" = "Library.Visits",
-                                                                   "Salaries",
+                                                                   "Salaries" = "Salaries",
                                                                    "Circulation Transactions"  = "Circulation.Transactions")),
                                                 checkboxInput("pi", label = "Include prediction interval?"),
                                                 downloadButton("slr_plot_download", "Download Plot")),
@@ -278,9 +278,91 @@ ui <-dashboardPage(skin = "red",
                                                 box(width = 11,
                                                     plotOutput("slr_plot"))
                                                 )
-                                   ) #end tabPanel
-                              ) #end tabsetPanel
-                        ) #end tabItem glm
+                                   ), #end tabPanel
+
+
+                      tabPanel("Regression Tree",
+                             fluidRow(
+                               uiOutput("tree_title"),
+                               column(7,
+                                      selectInput("Resp", label = "Choose a response variable:",
+                                                  choices = list("Service Population" = "Service.Population",
+                                                                 "State Population" = "State.Population",
+                                                                 "Central Libraries" = "Central.Libraries",
+                                                                 "Branch Libraries" = "Branch.Libraries",
+                                                                 "Bookmobiles" = "Bookmobiles",
+                                                                 "MLS Librarians" = "MLS.Librarians",
+                                                                 "Librarians" = "Librarians",
+                                                                 "Employees" = "Employees",
+                                                                 "Total Staff" = "Total.Staff",
+                                                                 "Local Government Operating Revenue" = "Local.Government.Operating.Revenue",
+                                                                 "State Government Operating Revenue" = "State.Government.Operating.Revenue",
+                                                                 "Federal Government Operating Revenue" = "Federal.Government.Operating.Revenue",
+                                                                 "Other Operating Revenue" = "Other.Operating.Revenue",
+                                                                 "Total Operating Revenue" = "Total.Operating.Revenue",
+                                                                 "Salaries" = "Salaries",
+                                                                 "Benefits" = "Benefits",
+                                                                 "Total Staff Expenditures" = "Total.Staff.Expenditures",
+                                                                 "Print Collection Expenditures" = "Print.Collection.Expenditures",
+                                                                 "Digital Collection Expenditures" = "Digital.Collection.Expenditures",
+                                                                 "Other Collection Expenditures" = "Other.Collection.Expenditures",
+                                                                 "Total Collection Expenditures" = "Total.Collection.Expenditures",
+                                                                 "Other Operating Expenditures" = "Other.Operating.Expenditures",
+                                                                 "Total Operating Expenditures" = "Total.Operating.Expenditures",
+                                                                 "Local Government Capital Revenue" = "Local.Government.Capital.Revenue",
+                                                                 "State Government Capital Revenue" = "State.Government.Capital.Revenue",
+                                                                 "Federal Government Capital Revenue" = "Federal.Government.Capital.Revenue",
+                                                                 "Other Capital Revenue" = "Other.Capital.Revenue",
+                                                                 "Total Capital Revenue" = "Total.Capital.Revenue",
+                                                                 "Total Capital Expenditures" = "Total.Capital.Expenditures",
+                                                                 "Print Collection" = "Print.Collection",
+                                                                 "Digital Collection" = "Digital.Collection",
+                                                                 "Audio Collection" = "Audio.Collection",
+                                                                 "Downloadable Audio" = "Downloadable.Audio",
+                                                                 "Physical Video" = "Physical.Video",
+                                                                 "Downloadable Video" = "Downloadable.Video",
+                                                                 "Local Cooperative Agreements" = "Local.Cooperative.Agreements",
+                                                                 "State Licensed Databases" = "State.Licensed.Databases",
+                                                                 "Total Licensed Databases" = "Total.Licensed.Databases",
+                                                                 "Print Subscriptions" = "Print.Subscriptions",
+                                                                 "Hours Open" = "Hours.Open",
+                                                                 "Library Visits" = "Library.Visits",
+                                                                 "Reference Transactions" = "Reference.Transactions",
+                                                                 "Registered Users" = "Registered.Users",
+                                                                 "Circulation Transactions" = "Circulation.Transactions",
+                                                                 "Interlibrary Loans Provided" = "Interlibrary.Loans.Provided",
+                                                                 "Interlibrary Loans Received" = "Interlibrary.Loans.Received",
+                                                                 "Library Programs" = "Library.Programs",
+                                                                 "Children’s Programs" = "Children’s.Programs",
+                                                                 "Young Adult Programs" = "Young.Adult.Programs",
+                                                                 "Library Program Audience" = "Library.Program.Audience",
+                                                                 "Children’s Program Audience" = "Children’s.Program.Audience",
+                                                                 "Young Adult Program Audience" = "Young.Adult.Program.Audience",
+                                                                 "Public Internet Computers" = "Public.Internet.Computers",
+                                                                 "Internet Computer Use" = "Internet.Computer.Use",
+                                                                 "Wireless Internet Sessions" = "Wireless.Internet.Sessions"
+                                                                 )),
+                                      numericInput("seed", label = "Set a seed", min=1, max=999, value = 250),
+                                      numericInput("ntrees", label = "Select number of trees",
+                                                   min = 1, max = 10, value = 3)) #end column
+                                  ), #end fluidRow
+                              fluidRow(
+                                box(width = 12,
+                                    plotOutput("tree_plot"))
+                              )
+                             ) #end tabPanel 
+                           ) #end tabsetPanel
+                        ), #end tabItem glm
+            tabItem("map",
+                    fluidPage(
+                      fluidRow(
+                        box(width=12,
+                            h4("This map plots all public libraries who reported data for the 2014 PLS."),
+                            h4("Click a circle to view the library name and the county population."))
+                      ),
+                      leafletOutput("lib_map")
+                    )
+                    ) #end tabItem map
             ) #end tabItems
         ) #end dashboardBody
     ) #end dashboardPage
