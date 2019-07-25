@@ -44,7 +44,7 @@ Use: PLS data are useful to researchers, journalists, the public, local practiti
 #read in data
 data_by_library <- read_csv("PLS/libraries.csv")
 
-data_by_state <- read_csv("states.csv")
+data_by_state <- read_csv("PLS/states.csv")
 
 #Fix column names
 colnames(data_by_state) <- make.names(colnames(data_by_state))
@@ -110,7 +110,7 @@ gp + geom_point(aes(color = Region.Code))
   }
   
     #Bar chart of selected cost variable by selected region
-  ggplot(data = data_by_region_se, aes(x = `State`, y = Total.Operating.Expenditures/State.Population)) + ##switch to input$cost_type and input$region
+  ggplot(data = data_by_region_se, aes(x = State, y = Total.Operating.Expenditures/State.Population)) + ##switch to input$cost_type and input$region
     geom_bar(stat = "Identity") + 
     ggtitle("Per Capita Public Library Operating Costs for Southeast Region (US).") + ##Switch to dynamic title
     ylab("Dollars Spent per Capita")
@@ -135,6 +135,8 @@ ylab = "Cum. Prop of Variance Explained", ylim = c(0, 1), type = 'b')
 #Create Biplot
 ##Must add user input to view PCs
 biplot(PCs, xlabs = rep(".", nrow(data_by_state)), choices = c(2,3), cex = .6)
+
+autoplot(PCs, x =2, y= 3, scale = 0, loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3)
 
 ##Must add dynamic table print for PCs selected in the biplot
 kable(PCs$rotation[,c("PC1","PC2")])
