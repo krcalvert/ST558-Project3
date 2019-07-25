@@ -309,7 +309,15 @@ shinyServer(function(input, output, session) {
       
       grid <- expand.grid(maxdepth = input$ntrees)
       
-      tree_fit <- train(input$Resp ~ ., data = state_data_train,
+      # pred <- as.matrix(data_by_state[input$linear_vars])
+      # resp <- as.matrix(data_by_state[input$linear_resp])
+      # newdf <- data.frame(pred,resp)
+      # fit <- lm(resp ~ pred)
+      
+      tree_response <- as.matrix(state_data_train[,input$Resp])
+      
+      tree_fit <- train(as.matrix(state_data_train[,input$Resp]) ~ state_data_train$Total.Libraries, 
+                        data = state_data_train,
                         method = "rpart2",
                         trControl = train_control,
                         tuneGrid = grid)
@@ -317,7 +325,7 @@ shinyServer(function(input, output, session) {
 
     })
     
-    output$tree_plot -> renderPlot({
+    output$tree_plot <- renderPlot({
       tree_model()
     })
     
