@@ -344,7 +344,13 @@ ui <-dashboardPage(skin = "red",
                                                                  )),
                                       numericInput("seed", label = "Set a seed", min=1, max=999, value = 250),
                                       numericInput("ntrees", label = "Select number of trees",
-                                                   min = 1, max = 10, value = 3)) #end column
+                                                   min = 1, max = 4, value = 1)), #end column
+                               column(5,
+                                      p(strong("Prediction Root MSE")),
+                                      withMathJax(),
+                                      helpText("$$\\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$"),
+                                      uiOutput("tree_rmse")
+                                      ) #end column
                                   ), #end fluidRow
                               fluidRow(
                                 box(width = 12,

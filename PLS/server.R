@@ -30,7 +30,7 @@ PCs <- prcomp(select(data_by_state, Service.Population, Total.Libraries, Total.S
 
 #subset data for regression tree
   #select numeric variables only and exclude variables with zero variance
-state_data_limited <- data_by_state %>% dplyr::select(-Submission.Year, -State.Code, -Region.Code) %>% dplyr::select_if(is.numeric) 
+state_data_limited <- data_by_state %>% dplyr::select(-Submission.Year, -State.Code, -Region.Code, -Service.Population.Without.Duplicates) %>% dplyr::select_if(is.numeric) 
 
 
 #subset of data for map
@@ -303,30 +303,35 @@ shinyServer(function(input, output, session) {
       state_data_test <- state_data_limited[test,]
       
       #train model
-      train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+      train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, returnResamp = "all", savePredictions = "all")
       
       #user selects number of response variable and the number of trees
       
       grid <- expand.grid(maxdepth = input$ntrees)
       
-      # pred <- as.matrix(data_by_state[input$linear_vars])
-      # resp <- as.matrix(data_by_state[input$linear_resp])
-      # newdf <- data.frame(pred,resp)
-      # fit <- lm(resp ~ pred)
-      
-      tree_response <- as.matrix(state_data_train[,input$Resp])
-      
-      tree_fit <- train(as.matrix(state_data_train[,input$Resp]) ~ state_data_train$Total.Libraries, 
+      tree_response <- state_data_train %>% select(input$Resp)
+
+      tree_fit <- train(as.formula(paste(input$Resp, "~.")), 
                         data = state_data_train,
                         method = "rpart2",
-                        trControl = train_control,
                         tuneGrid = grid)
-      fancyRpartPlot(tree_fit$finalModel)
+      
+      fancyRpartPlot(tree_fit$finalModel, main= paste("Regression Tree for ", input$Resp), sub = paste("ntrees = ", input$ntrees), palettes = "RdPu")
 
     })
     
     output$tree_plot <- renderPlot({
       tree_model()
+    })
+    
+    tree_prediction <- reactive({
+        pred_tree <- caret::predict.train(tree_fit, newdata = dplyr::select(state_data_test,-Hours.Open))
+        t_rmse <- sqrt(mean((pred_tree-state_data_test$Hours.Open)^2))
+        print(t_rmse)
+    })
+    
+    output$tree_rmse <- renderUI({
+        withMathJax(helpText("$$MSE = \\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$" ,tree_prediction()))
     })
     
     ###leaflet map
