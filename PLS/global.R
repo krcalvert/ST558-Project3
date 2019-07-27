@@ -10,6 +10,6 @@ library(ggfortify)
 library(ciTools)
 library(RColorBrewer)
 library(rattle)
-
+library(tree)
 
 options(knitr.table.format = "html") 

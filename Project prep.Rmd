@@ -149,6 +149,7 @@ kable(PCs$rotation[,c("PC1","PC2")])
 #Exclude columns with no variance
 
 state_data_limited <- data_by_state %>% dplyr::select_if(is.numeric) %>% dplyr::select(-Submission.Year, -State.Code, -Region.Code)
+state_data_limited <- data_by_state %>% dplyr::select(-Submission.Year, -State.Code, -Region.Code, -Service.Population.Without.Duplicates) %>% dplyr::select_if(is.numeric) 
 
 train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
 tree_fit <- train(Library.Visits ~ ., data = state_data_train,
@@ -164,7 +165,6 @@ test <- dplyr::setdiff(1:nrow(state_data_limited), train)
 
 state_data_train <- state_data_limited[train,]
 state_data_test <- state_data_limited[test,]
-
 
 #Create training and test sets
 set.seed(250)
@@ -213,5 +213,27 @@ leaflet(data = map_data) %>%
   addTiles %>% 
   setView(zoom = 7, lng = -78.6821, lat = 35.7847) %>% 
   addCircleMarkers(clusterOptions = markerClusterOptions(),radius = ~ifelse(County.Population > 500000, 15, 10), color = "green", stroke = FALSE, fillOpacity = .5, popup = paste("<h4>", map_data$Library.Name,"</h4>", "<br>", "County Pop. = ", map_data$County.Population))
+```
+
+```{r}
+state_data_limited <- data_by_state %>% dplyr::select(-Submission.Year, -State.Code,-Service.Population.Without.Duplicates)
+state_data_limited$Region.Code <- as.factor(state_data_limited$Region.Code)
+set.seed(250)
+train <- sample(1:nrow(state_data_limited), size = nrow(state_data_limited)*.8)
+test <- dplyr::setdiff(1:nrow(state_data_limited), train)
+
+state_data_train <- state_data_limited[train,]
+state_data_test <- state_data_limited[test,]
+
+class_tree_fit <- tree(Region.Code ~ Library.Programs + Print.Collection + Hours.Open + Total.Libraries + Library.Visits, data = state_data_train, split = "deviance")
+class_tree_fit
+plot(class_tree_fit)
+text(class_tree_fit)
+
+summary(class_tree_fit)
+
+predict(class_tree_fit, newdata = dplyr::select(state_data_limited, Library.Programs, Print.Collection, Hours.Open, Total.Libraries, Library.Visits))
+
+str(data_by_state)
 ```
 

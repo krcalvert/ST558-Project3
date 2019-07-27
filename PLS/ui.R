@@ -348,7 +348,6 @@ ui <-dashboardPage(skin = "red",
                                column(5,
                                       p(strong("Prediction Root MSE")),
                                       withMathJax(),
-                                      helpText("$$\\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$"),
                                       uiOutput("tree_rmse")
                                       ) #end column
                                   ), #end fluidRow

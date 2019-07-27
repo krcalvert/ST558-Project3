@@ -28,10 +28,6 @@ PCs <- prcomp(select(data_by_state, Service.Population, Total.Libraries, Total.S
                      Hours.Open, Library.Visits, Circulation.Transactions, Library.Programs, Library.Programs, 
                      Public.Internet.Computers, Internet.Computer.Use), center = TRUE, scale = TRUE)
 
-#subset data for regression tree
-  #select numeric variables only and exclude variables with zero variance
-state_data_limited <- data_by_state %>% dplyr::select(-Submission.Year, -State.Code, -Region.Code, -Service.Population.Without.Duplicates) %>% dplyr::select_if(is.numeric) 
-
 
 #subset of data for map
 map_data <- data_by_library %>% dplyr::select(Library.Name, State, Zip.Code, latitude = Latitude, longitude = Longitude, County.Population)
@@ -232,7 +228,7 @@ shinyServer(function(input, output, session) {
         resp <- as.matrix(data_by_state[input$linear_resp])
         newdf <- data.frame(pred,resp)
         fit <- lm(resp ~ pred)
-        
+
         newdf <- ciTools::add_pi(newdf, fit, names = c("lower", "upper"))
 
         if(input$pi){
@@ -269,6 +265,7 @@ shinyServer(function(input, output, session) {
             ggsave(file, slr())
         }
     )
+
     # SLR prediction title
     output$predict_slr_title <- renderUI({
         p(strong("Predicted value for response variable"))
@@ -290,28 +287,36 @@ shinyServer(function(input, output, session) {
         paste0(deparse(input$linear_resp), " = ", scales::comma(round(y,2)))
     })
     
-    ### Regression Tree
+    ## Regression Tree
     tree_model <- reactive({
+      
+      #subset data for regression tree
+      #select numeric variables only and exclude variables with zero variance
+      state_data_limited <- data_by_state %>% 
+        dplyr::select(-Submission.Year, -State.Code, -Region.Code, -Service.Population.Without.Duplicates) %>% 
+        dplyr::select_if(is.numeric) 
+      
       #user selects seed
       set.seed(input$seed)
-      
+
       #subset date into test and training sets
       train <- sample(1:nrow(state_data_limited), size = nrow(state_data_limited)*.8)
       test <- dplyr::setdiff(1:nrow(state_data_limited), train)
-      
+
       state_data_train <- state_data_limited[train,]
       state_data_test <- state_data_limited[test,]
-      
+
       #train model
       train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, returnResamp = "all", savePredictions = "all")
-      
-      #user selects number of response variable and the number of trees
-      
-      grid <- expand.grid(maxdepth = input$ntrees)
-      
-      tree_response <- state_data_train %>% select(input$Resp)
 
-      tree_fit <- train(as.formula(paste(input$Resp, "~.")), 
+      #user selects number of response variable and the number of trees
+
+      grid <- expand.grid(maxdepth = input$ntrees)
+
+      group_vars <- c("Library.Programs", "Print.Collection", "Hours.Open", "Total.Libraries", "Library.Visits")
+      y <- input$Resp
+
+      tree_fit <- train(as.formula(paste(y, paste0(group_vars, collapse="+"), sep=" ~ ")),
                         data = state_data_train,
                         method = "rpart2",
                         tuneGrid = grid)
@@ -320,16 +325,43 @@ shinyServer(function(input, output, session) {
 
     })
     
+
     output$tree_plot <- renderPlot({
       tree_model()
     })
     
     tree_prediction <- reactive({
-        pred_tree <- caret::predict.train(tree_fit, newdata = dplyr::select(state_data_test,-Hours.Open))
-        t_rmse <- sqrt(mean((pred_tree-state_data_test$Hours.Open)^2))
-        print(t_rmse)
+
+      #user selects seed
+      set.seed(input$seed)
+      
+      #subset date into test and training sets
+      train <- sample(1:nrow(data_by_state), size = nrow(data_by_state)*.8)
+      test <- dplyr::setdiff(1:nrow(data_by_state), train)
+      
+      state_data_train <- data_by_state[train,]
+      state_data_test <- data_by_state[test,]
+      
+      #train model
+      train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, returnResamp = "all", savePredictions = "all")
+      
+      #user selects number of response variable and the number of trees
+      
+      grid <- expand.grid(maxdepth = input$ntrees)
+      
+      group_vars <- c("Library.Programs", "Print.Collection", "Hours.Open", "Total.Libraries", "Library.Visits")
+      y <- data_by_state[input$Resp]
+
+      tree_fit <- train(as.formula(paste(y, paste0(group_vars, collapse="+"), sep=" ~ ")),
+                        data = data_by_state,
+                        method = "rpart2",
+                        tuneGrid = grid)
+      
+      pred <- predict(tree_fit, newdata = dplyr::select(state_data_test, Library.Programs, Print.Collection, Hours.Open, Total.Libraries, Library.Visits))
+
+      rmse <- sqrt(mean((pred-state_data_test[input$Resp])^2))
     })
-    
+
     output$tree_rmse <- renderUI({
         withMathJax(helpText("$$MSE = \\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$" ,tree_prediction()))
     })
