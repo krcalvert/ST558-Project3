@@ -235,5 +235,28 @@ summary(class_tree_fit)
 predict(class_tree_fit, newdata = dplyr::select(state_data_limited, Library.Programs, Print.Collection, Hours.Open, Total.Libraries, Library.Visits))
 
 str(data_by_state)
+
+
+
+
+
+
+
+      grid <- expand.grid(maxdepth = 3)
+      
+      group_vars <- c("Library.Programs", "Print.Collection", "Hours.Open", "Total.Libraries", "Library.Visits")
+      y <- data_by_state["Service.Population"]
+
+      tree_fit <- train(as.formula(paste(y, paste0(group_vars, collapse="+"), sep=" ~ ")),
+                        data = data_by_state,
+                        method = "rpart2",
+                        tuneGrid = grid)
+      
+      pred <- predict(tree_fit, newdata = dplyr::select(state_data_test, Library.Programs, Print.Collection, Hours.Open, Total.Libraries, Library.Visits))
+      print(as.formula(paste(pred, y, sep = "-")))
+            rmse <- sqrt(mean((as.formula(paste(pred, y,sep = "-"))^2)))
+            
+            
+            eval(parse(text=paste(pred, y, sep = "-")))
 ```
 

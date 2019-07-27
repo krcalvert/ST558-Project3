@@ -284,7 +284,8 @@ ui <-dashboardPage(skin = "red",
                       tabPanel("Regression Tree",
                              fluidRow(
                                uiOutput("tree_title"),
-                               column(7,
+                               column(4,
+                                      h4("Build your Tree"),
                                       selectInput("Resp", label = "Choose a response variable:",
                                                   choices = list("Service Population" = "Service.Population",
                                                                  "State Population" = "State.Population",
@@ -315,7 +316,6 @@ ui <-dashboardPage(skin = "red",
                                                                  "Other Capital Revenue" = "Other.Capital.Revenue",
                                                                  "Total Capital Revenue" = "Total.Capital.Revenue",
                                                                  "Total Capital Expenditures" = "Total.Capital.Expenditures",
-                                                                 "Print Collection" = "Print.Collection",
                                                                  "Digital Collection" = "Digital.Collection",
                                                                  "Audio Collection" = "Audio.Collection",
                                                                  "Downloadable Audio" = "Downloadable.Audio",
@@ -325,14 +325,11 @@ ui <-dashboardPage(skin = "red",
                                                                  "State Licensed Databases" = "State.Licensed.Databases",
                                                                  "Total Licensed Databases" = "Total.Licensed.Databases",
                                                                  "Print Subscriptions" = "Print.Subscriptions",
-                                                                 "Hours Open" = "Hours.Open",
-                                                                 "Library Visits" = "Library.Visits",
                                                                  "Reference Transactions" = "Reference.Transactions",
                                                                  "Registered Users" = "Registered.Users",
                                                                  "Circulation Transactions" = "Circulation.Transactions",
                                                                  "Interlibrary Loans Provided" = "Interlibrary.Loans.Provided",
                                                                  "Interlibrary Loans Received" = "Interlibrary.Loans.Received",
-                                                                 "Library Programs" = "Library.Programs",
                                                                  "Children’s Programs" = "Children’s.Programs",
                                                                  "Young Adult Programs" = "Young.Adult.Programs",
                                                                  "Library Program Audience" = "Library.Program.Audience",
@@ -344,17 +341,33 @@ ui <-dashboardPage(skin = "red",
                                                                  )),
                                       numericInput("seed", label = "Set a seed", min=1, max=999, value = 250),
                                       numericInput("ntrees", label = "Select number of trees",
-                                                   min = 1, max = 4, value = 1)), #end column
-                               column(5,
-                                      p(strong("Prediction Root MSE")),
-                                      withMathJax(),
+                                                   min = 1, max = 4, value = 1),
+                                      br(),
+                                      withMathJax(helpText("$$MSE = \\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$")),
                                       uiOutput("tree_rmse")
-                                      ) #end column
+                                      ), #end column
+                               column(4,
+                                      h4("Run your prediction:"),
+                                      numericInput("tree_var_1", label = "Set Value for Library Programs", 
+                                                   min=1, value = 10000),
+                                      numericInput("tree_var_2", label ="Set Value for Print Collection", 
+                                                   min = 1, value = 2000000),
+                                      numericInput("tree_Var_3", label = "Set Value for Hours Open", 
+                                                   min = 1, value = 100000),
+                                      numericInput("tree_Var_4", label="Set Value for Total Libraries", 
+                                                   min = 1, value = 50),
+                                      numericInput("tree_Var_5", label = "Set Value for Library Visits", 
+                                                   min = 1, value = 3000000)),
+                               column(4,
+                                      h4("Prediction Output"),
+                                         box(width = 12,
+                                          uiOutput("predicted_tree"))
+                                     ) #end column
                                   ), #end fluidRow
                               fluidRow(
                                 box(width = 12,
                                     plotOutput("tree_plot"))
-                              )
+                              ) #end fluidRow
                              ) #end tabPanel 
                            ) #end tabsetPanel
                         ), #end tabItem glm

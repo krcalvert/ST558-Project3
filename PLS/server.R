@@ -315,6 +315,7 @@ shinyServer(function(input, output, session) {
 
       group_vars <- c("Library.Programs", "Print.Collection", "Hours.Open", "Total.Libraries", "Library.Visits")
       y <- input$Resp
+      full_y <- state_data_test[input$Resp]
 
       tree_fit <- train(as.formula(paste(y, paste0(group_vars, collapse="+"), sep=" ~ ")),
                         data = state_data_train,
@@ -332,6 +333,48 @@ shinyServer(function(input, output, session) {
     
     tree_prediction <- reactive({
 
+      #Repeating all of the tree_model() code since calling it in to this section as tree_model() didn't work
+      #user selects seed
+      set.seed(input$seed)
+
+      #subset date into test and training sets
+      train <- sample(1:nrow(data_by_state), size = nrow(data_by_state)*.8)
+      test <- dplyr::setdiff(1:nrow(data_by_state), train)
+
+      state_data_train <- data_by_state[train,]
+      state_data_test <- data_by_state[test,]
+
+      #train model
+      train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, returnResamp = "all", savePredictions = "all")
+
+      #user selects number of response variable and the number of trees
+
+      grid <- expand.grid(maxdepth = input$ntrees)
+
+      group_vars <- c("Library.Programs", "Print.Collection", "Hours.Open", "Total.Libraries", "Library.Visits")
+      y <- data_by_state[input$Resp]
+
+      tree_fit <- train(as.formula(paste(y, paste0(group_vars, collapse="+"), sep=" ~ ")),
+                        data = data_by_state,
+                        method = "rpart2",
+                        tuneGrid = grid)
+
+      pred <- predict(tree_fit, newdata = dplyr::select(state_data_test, Library.Programs, Print.Collection, Hours.Open, Total.Libraries, Library.Visits))
+
+
+      tree_rmse <- round(sqrt(mean((eval(parse(text=paste(pred, y, sep = "-")))))^2),2)
+    })
+
+    output$tree_rmse <- renderUI({
+        p(strong(paste0("Model Test Root MSE = ", tree_prediction())))
+        #withMathJax(helpText("$$MSE = \\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$"))
+    })
+    
+    #User tree prediction
+
+    user_prediction_for_tree <- reactive({
+      #Repeating all of the tree_model() code since calling it in to this section as tree_model() didn't work
+      
       #user selects seed
       set.seed(input$seed)
       
@@ -351,19 +394,22 @@ shinyServer(function(input, output, session) {
       
       group_vars <- c("Library.Programs", "Print.Collection", "Hours.Open", "Total.Libraries", "Library.Visits")
       y <- data_by_state[input$Resp]
-
+      
       tree_fit <- train(as.formula(paste(y, paste0(group_vars, collapse="+"), sep=" ~ ")),
                         data = data_by_state,
                         method = "rpart2",
                         tuneGrid = grid)
       
-      pred <- predict(tree_fit, newdata = dplyr::select(state_data_test, Library.Programs, Print.Collection, Hours.Open, Total.Libraries, Library.Visits))
-
-      rmse <- sqrt(mean((pred-state_data_test[input$Resp])^2))
+      ##new prediction
+      round(predict(tree_fit, newdata = data.frame("Library.Programs" = input$tree_var_1, "Print.Collection" = input$tree_var_2,
+                                             "Hours.Open" = input$tree_Var_3, "Total.Libraries" = input$tree_Var_4,
+                                             "Library.Visits" = input$tree_Var_5)),2)
     })
-
-    output$tree_rmse <- renderUI({
-        withMathJax(helpText("$$MSE = \\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$" ,tree_prediction()))
+    
+    output$predicted_tree <-renderUI({
+      withProgress(message = 'Calculating', value = 0, {
+        p(strong(paste("Predicted value for", input$Resp, " is ", user_prediction_for_tree())))
+      })
     })
     
     ###leaflet map
