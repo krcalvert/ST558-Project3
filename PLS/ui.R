@@ -34,40 +34,79 @@ ui <-dashboardPage(skin = "red",
                         column(6,
                                h2("What is this App?"),
                                box(width = 12, background = "light-blue",
-                                   h4("Text"))),
+                                   h4("This application demonstrates and applies the learning outcomes for the Data Science for Statisticians 
+                                      course at North Carolina State University."),
+                                   h4("The major topics covered are:"),
+                                   tags$ol(
+                                           tags$li("Coding in R"),
+                                           tags$li("Reading and summarizing data"),
+                                           tags$li("Statistical/Machine learning"),
+                                           tags$li("Visualizing and deploying data")
+                                   ),
+                                   h4("This applet provides a data exploration page with numeric and graphical summaries,
+                                      one unsupervised learning model (principal components analysis (PCA)), two supervised learning
+                                      models (simple linear regression and simple regression trees), and a map."),
+                                   h4("Each section provides the user some opportunity to choose parameters or set properties
+                                      of the algorithm and to save the data or plot."))),
                         column(6, 
                                h2("How do I use this App?"),
                                box(width = 14, background = "light-blue",
-                                    h4("Text")))
-                    ),
+                                    h4("The tabs on the sidebar allow for navigation between models or data sections. Within each of these
+                                       tabs, there are one or more tabs across the top of the app."),
+                                   h4("Data tab:"),
+                                   tags$ol(
+                                           tags$li("Browse the entire data set"),
+                                           tags$li("View summary data for the group of variables you choose"),
+                                           tags$li("View a scatter plot of two variables you choose, an option to add color by a grouping,
+                                                   and the ability to click on the graph"),
+                                           tags$li("View a bar chart of operating costs by US region")
+                                   ),
+                                   h4("Unsupervised Model tab:"),
+                                      tags$ol(
+                                              tags$li("View the biplot and principal components you choose from the PCA")
+                                      ),
+                                   h4("Supervised Models tab:"),
+                                   tags$ol(
+                                           tags$li("Perform a simple linear regression with the variables you choose, and then
+                                                   run your own prediction"),
+                                           tags$li("Create a regression tree for the variable of your choosing and the maximum depth
+                                                   for the model, and then run your own prediction")
+                                   ),
+                                   h4("Map tab:"),
+                                   tags$ol(
+                                           tags$li("View and interact with a map of all public libraries in the United States")
+                                   )
+                               ) #end box
+                        )#end column
+                    ), #end fluidRow
                     fluidRow(
                         column(12, 
-                               h2("About the dataset"),
+                               h3("About the dataset"),
                                a(href="https://www.imls.gov/research-evaluation/data-collection/public-libraries-survey", 
                                  "Description taken from IMLS page about the Public Libraries Survey"),
                                br(),
-                               box(width = 12, background = "light-blue",
-                                   h4("The Public Libraries Survey (PLS) examines when, where, and how library services are changing to 
+                               box(width = 12, 
+                                   p("The Public Libraries Survey (PLS) examines when, where, and how library services are changing to 
                                       meet the needs of the public. These data, supplied annually by public libraries across the country, 
                                       provide information that policymakers and practitioners can use to make informed decisions about 
                                       the support and strategic management of libraries."),
-                                   h4("Purpose: The survey provides statistics on the status of public libraries in the United States."),
+                                   p("Purpose: The survey provides statistics on the status of public libraries in the United States."),
                                    
-                                   h4("Coverage: The data are collected from approximately 9,000 public libraries with approximately 
+                                   p("Coverage: The data are collected from approximately 9,000 public libraries with approximately 
                                       17,000 individual public library outlets (main libraries, branches, and bookmobiles) in the 50 states, 
                                       the District of Columbia, and outlying territories."),
                                    
-                                   h4("Content: Data includes information about library visits, circulation, size of collections, public
+                                   p("Content: Data includes information about library visits, circulation, size of collections, public
                                       service hours, staffing, electronic resources, operating revenues and expenditures and number of 
                                       service outlets."),
                                    
-                                   h4("Frequency: Collected annually since 1988. (Data files are available since 1992.)"),
+                                   p("Frequency: Collected annually since 1988. (Data files are available since 1992.)"),
                                    
-                                   h4("Methods: At the state level, PLS is administered by Data Coordinators, appointed by the chief officer
+                                   p("Methods: At the state level, PLS is administered by Data Coordinators, appointed by the chief officer
                                       of the state library agency from each state or outlying area. State Data Coordinators collect the 
                                       requested data from local public libraries and report these data to us via a web-based reporting system."),
                                    
-                                   h4("Use: PLS data are useful to researchers, journalists, the public, local practitioners, and policymakers
+                                   p("Use: PLS data are useful to researchers, journalists, the public, local practitioners, and policymakers
                                       at the federal, state, and local levels, and are used for planning, evaluation, and policy making. Download
                                       the datasets in multiple formats below, or use our online Library Search & Compare tool to find a library
                                       and browse the latest available data. Browse over 25 years’ worth of research publications about the Public
@@ -80,6 +119,7 @@ ui <-dashboardPage(skin = "red",
                                box(width = 12,
                                     h4("Dataset Downloaded From"),
                                     a(href ="https://www.kaggle.com/imls/public-libraries", "Kaggle, 2014 Public Libraries Survey"),
+                                    p("License:   CC0: Public Domain"),
                                     h4("Data definitions from the Institute of Museum and Library Services"),
                                     a(href ="https://www.imls.gov/sites/default/files/fy2014_pls_data_file_documentation.pdf","Documentation")
                                 )
@@ -94,7 +134,7 @@ ui <-dashboardPage(skin = "red",
                                 "Summer 2019",
                                 br(),
                                 "Project 3"))
-                        )
+                        ) #end fluidRow
                 ), #end tabitem info
                 
                 #second tab content
@@ -109,7 +149,7 @@ ui <-dashboardPage(skin = "red",
                                 column(3,
                                     fluidRow(
                                         br(),
-                                        downloadButton("all_data_download"),
+                                        downloadButton("all_data_download", "Download Table"),
                                         br()
                                         )),
                                 column(12,
@@ -129,7 +169,7 @@ ui <-dashboardPage(skin = "red",
                                 column(5, 
                                        br(),
                                        br(),
-                                       downloadButton("download_DT", "Download"))
+                                       downloadButton("download_DT", "Download Table"))
                             ),
                              fluidRow(
                                 box(width = 12,
@@ -262,7 +302,7 @@ ui <-dashboardPage(skin = "red",
                                                 checkboxInput("pi", label = "Include prediction interval?"),
                                                 downloadButton("slr_plot_download", "Download Plot")),
                                             column(7,
-                                                br(),
+                                                h4("Run your prediction:"),
                                                 sliderInput("pred_slr_value", label ="Enter a value for selected predictor",
                                                             min = 1, max = 100000000, value = 500000, step = 10000),
                                                 uiOutput("predict_slr_title"),
@@ -341,10 +381,7 @@ ui <-dashboardPage(skin = "red",
                                                                  )),
                                       numericInput("seed", label = "Set a seed", min=1, max=999, value = 250),
                                       numericInput("ntrees", label = "Select number of trees",
-                                                   min = 1, max = 4, value = 1),
-                                      br(),
-                                      withMathJax(helpText("$$MSE = \\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$")),
-                                      uiOutput("tree_rmse")
+                                                   min = 1, max = 4, value = 1)
                                       ), #end column
                                column(4,
                                       h4("Run your prediction:"),
@@ -353,17 +390,31 @@ ui <-dashboardPage(skin = "red",
                                       numericInput("tree_var_2", label ="Set Value for Print Collection", 
                                                    min = 1, value = 2000000),
                                       numericInput("tree_Var_3", label = "Set Value for Hours Open", 
-                                                   min = 1, value = 100000),
+                                                   min = 1, value = 100000)
+                               ),
+                               column(4,
+                                      br(),
+                                      br(),
                                       numericInput("tree_Var_4", label="Set Value for Total Libraries", 
                                                    min = 1, value = 50),
                                       numericInput("tree_Var_5", label = "Set Value for Library Visits", 
-                                                   min = 1, value = 3000000)),
-                               column(4,
-                                      h4("Prediction Output"),
-                                         box(width = 12,
-                                          uiOutput("predicted_tree"))
+                                                   min = 1, value = 3000000)
                                      ) #end column
                                   ), #end fluidRow
+                             fluidRow(
+                                     column(4,
+                                                withMathJax("$$MSE = \\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$"),
+                                                uiOutput("tree_rmse")),
+                                     column(4,
+                                                h4("Prediction Output"),
+                                                box(width = 12,
+                                                    uiOutput("predicted_tree"))
+                                     ),
+                                     column(4,
+                                            br(),
+                                            br(),
+                                            p(strong("To save the decision tree, right click plot and select 'save image as...'")))
+                             ), #end fluidRow
                               fluidRow(
                                 box(width = 12,
                                     plotOutput("tree_plot"))
@@ -375,7 +426,7 @@ ui <-dashboardPage(skin = "red",
                     fluidPage(
                       fluidRow(
                         box(width=12,
-                            h4("This map plots all public libraries who reported data for the 2014 PLS."),
+                            h4("This map plots all public libraries that reported data for the 2014 PLS."),
                             h4("Click a circle to view the library name and the county population."))
                       ),
                       leafletOutput("lib_map")

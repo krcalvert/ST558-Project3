@@ -149,7 +149,9 @@ shinyServer(function(input, output, session) {
     })
     
     output$bar_chart <- renderPlotly({
+      withProgress(message = 'Please wait', value = 0, {
         subset_region_plot()
+      })
     })
     
     # Download png of chart
@@ -268,7 +270,7 @@ shinyServer(function(input, output, session) {
 
     # SLR prediction title
     output$predict_slr_title <- renderUI({
-        p(strong("Predicted value for response variable"))
+        p(strong(paste("Predicted value for ", input$linear_resp)))
     })
     
     #change slider max
@@ -284,8 +286,9 @@ shinyServer(function(input, output, session) {
         fit <- lm(resp ~ pred, data = data_by_state)
         new <- data.frame(pred = input$pred_slr_value)
         y <- predict(fit, newdata = new)
-        paste0(deparse(input$linear_resp), " = ", scales::comma(round(y,2)))
+        scales::comma(round(y,2))
     })
+    
     
     ## Regression Tree
     tree_model <- reactive({
@@ -366,8 +369,7 @@ shinyServer(function(input, output, session) {
     })
 
     output$tree_rmse <- renderUI({
-        p(strong(paste0("Model Test Root MSE = ", tree_prediction())))
-        #withMathJax(helpText("$$MSE = \\frac{1}{n}\\sum_{i=1}^n (Y_i-\\hat{Y}_i)^2$$"))
+        p(strong(paste0("Model Test Error (Root MSE) = ", tree_prediction())))
     })
     
     #User tree prediction
@@ -412,15 +414,27 @@ shinyServer(function(input, output, session) {
       })
     })
     
+    #save the png the tree
+    output$reg_tree_download <- downloadHandler(
+      filename = function(){
+        paste(input$Resp, "_tree_plot.png", sep = "")
+      },
+      content = function(file){
+        ggsave(file, tree_model())
+      }
+    )
+    
     ###leaflet map
     output$lib_map <- renderLeaflet({
-        leaflet(data = map_data) %>% 
+        withProgress(message = 'Drawing map', value = 0, {
+          leaflet(data = map_data) %>% 
         addTiles %>% 
         setView(zoom = 7, lng = -78.6821, lat = 35.7847) %>% 
         addCircleMarkers(clusterOptions = markerClusterOptions(),
                          radius = ~ifelse(County.Population > 500000, 15, 10), 
                          color = "green", stroke = FALSE, fillOpacity = .5, 
                          popup = paste("<h4>", map_data$Library.Name,"</h4>", "<br>", "County Pop. = ", map_data$County.Population))
+        })
     })
 })
 
