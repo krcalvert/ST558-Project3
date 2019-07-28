@@ -20,7 +20,7 @@ library(leaflet)
 
 About the Survey
 
-from 
+from  
 [https://www.imls.gov/research-evaluation/data-collection/public-libraries-survey](About the PLS)
 [https://www.imls.gov/sites/default/files/fy2014_pls_data_file_documentation.pdf](Documentation)
 

@@ -398,7 +398,9 @@ ui <-dashboardPage(skin = "red",
                                       numericInput("tree_Var_4", label="Set Value for Total Libraries", 
                                                    min = 1, value = 50),
                                       numericInput("tree_Var_5", label = "Set Value for Library Visits", 
-                                                   min = 1, value = 3000000)
+                                                   min = 1, value = 3000000),
+                                      br(),
+                                      actionButton("enter", label = "Submit Values")
                                      ) #end column
                                   ), #end fluidRow
                              fluidRow(
@@ -413,7 +415,7 @@ ui <-dashboardPage(skin = "red",
                                      column(4,
                                             br(),
                                             br(),
-                                            p(strong("To save the decision tree, right click plot and select 'save image as...'")))
+                                            p(strong(" ")))
                              ), #end fluidRow
                               fluidRow(
                                 box(width = 12,

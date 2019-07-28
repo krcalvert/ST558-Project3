@@ -168,7 +168,6 @@ shinyServer(function(input, output, session) {
     #### PCA
     
     #Create Biplot
-    ##Must add user input to view PCs
     plot_biplot <- reactive({
         PC1 <- input$first_PC
         PC2 <- input$second_PC
@@ -181,7 +180,7 @@ shinyServer(function(input, output, session) {
             autoplot(PCs, x = PC1, y = PC2, loadings = TRUE, loadings.label = TRUE, loadings.label.size = 3)
         }
     })
-    
+
     output$biplot <- renderPlot({
         plot_biplot()
     })
@@ -310,7 +309,7 @@ shinyServer(function(input, output, session) {
       state_data_test <- state_data_limited[test,]
 
       #train model
-      train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, returnResamp = "all", savePredictions = "all")
+      # train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, returnResamp = "all", savePredictions = "all")
 
       #user selects number of response variable and the number of trees
 
@@ -325,19 +324,22 @@ shinyServer(function(input, output, session) {
                         method = "rpart2",
                         tuneGrid = grid)
       
-      fancyRpartPlot(tree_fit$finalModel, main= paste("Regression Tree for ", input$Resp), sub = paste("ntrees = ", input$ntrees), palettes = "RdPu")
-
+      tree_fit 
     })
     
 
+  # Display Decision Tree 
     output$tree_plot <- renderPlot({
-      tree_model()
+      fancyRpartPlot(tree_model()$finalModel, main= paste("Regression Tree for ", input$Resp), 
+                     sub = paste("ntrees = ", input$ntrees), palettes = "RdPu")
     })
     
+    
+    # Calculate tree RMSE
     tree_prediction <- reactive({
 
-      #Repeating all of the tree_model() code since calling it in to this section as tree_model() didn't work
-      #user selects seed
+      # #Repeating all of the tree_model() code since calling it in to this section as tree_model() didn't work
+      # #user selects seed
       set.seed(input$seed)
 
       #subset date into test and training sets
@@ -347,82 +349,70 @@ shinyServer(function(input, output, session) {
       state_data_train <- data_by_state[train,]
       state_data_test <- data_by_state[test,]
 
-      #train model
-      train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, returnResamp = "all", savePredictions = "all")
-
-      #user selects number of response variable and the number of trees
-
-      grid <- expand.grid(maxdepth = input$ntrees)
-
-      group_vars <- c("Library.Programs", "Print.Collection", "Hours.Open", "Total.Libraries", "Library.Visits")
       y <- data_by_state[input$Resp]
 
-      tree_fit <- train(as.formula(paste(y, paste0(group_vars, collapse="+"), sep=" ~ ")),
-                        data = data_by_state,
-                        method = "rpart2",
-                        tuneGrid = grid)
-
-      pred <- predict(tree_fit, newdata = dplyr::select(state_data_test, Library.Programs, Print.Collection, Hours.Open, Total.Libraries, Library.Visits))
+      pred <- predict(tree_model(), newdata = dplyr::select(state_data_test, Library.Programs, Print.Collection, Hours.Open, Total.Libraries, Library.Visits))
 
 
       tree_rmse <- round(sqrt(mean((eval(parse(text=paste(pred, y, sep = "-")))))^2),2)
     })
-
+    
+    #Display the RMSE for the tree model
     output$tree_rmse <- renderUI({
-        p(strong(paste0("Model Test Error (Root MSE) = ", tree_prediction())))
+      p(strong(paste0("Model Test Error (Root MSE) = ", tree_prediction())))
     })
     
-    #User tree prediction
+    # Store user inputs for tree prediction on click
+    predict_value <- eventReactive(
+      input$enter, {
+        prediction_tree <- data.frame("Library.Programs" = input$tree_var_1, "Print.Collection" = input$tree_var_2,
+                                      "Hours.Open" = input$tree_Var_3, "Total.Libraries" = input$tree_Var_4,
+                                      "Library.Visits" = input$tree_Var_5, stringsAsFactors = FALSE)
+        prediction_tree
+      }
+    )
+
+
+    
+    #User inputted tree prediction
 
     user_prediction_for_tree <- reactive({
       #Repeating all of the tree_model() code since calling it in to this section as tree_model() didn't work
-      
+
       #user selects seed
       set.seed(input$seed)
-      
+
       #subset date into test and training sets
       train <- sample(1:nrow(data_by_state), size = nrow(data_by_state)*.8)
       test <- dplyr::setdiff(1:nrow(data_by_state), train)
-      
+
       state_data_train <- data_by_state[train,]
       state_data_test <- data_by_state[test,]
-      
+
       #train model
       train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3, returnResamp = "all", savePredictions = "all")
-      
+
       #user selects number of response variable and the number of trees
-      
+
       grid <- expand.grid(maxdepth = input$ntrees)
-      
+
       group_vars <- c("Library.Programs", "Print.Collection", "Hours.Open", "Total.Libraries", "Library.Visits")
-      y <- data_by_state[input$Resp]
-      
+      y <- state_data_train[input$Resp]
+
       tree_fit <- train(as.formula(paste(y, paste0(group_vars, collapse="+"), sep=" ~ ")),
-                        data = data_by_state,
+                        data = state_data_train,
                         method = "rpart2",
                         tuneGrid = grid)
-      
-      ##new prediction
-      round(predict(tree_fit, newdata = data.frame("Library.Programs" = input$tree_var_1, "Print.Collection" = input$tree_var_2,
-                                             "Hours.Open" = input$tree_Var_3, "Total.Libraries" = input$tree_Var_4,
-                                             "Library.Visits" = input$tree_Var_5)),2)
+
+      #new user prediction
+      prediction <- round(predict(tree_fit, newdata = predict_value()),2)
+      prediction
     })
+
     
-    output$predicted_tree <-renderUI({
-      withProgress(message = 'Calculating', value = 0, {
-        p(strong(paste("Predicted value for", input$Resp, " is ", user_prediction_for_tree())))
-      })
+    output$predicted_tree <- renderUI({
+      paste("The predicted value for ", input$Resp, " is ", user_prediction_for_tree())
     })
-    
-    #save the png the tree
-    output$reg_tree_download <- downloadHandler(
-      filename = function(){
-        paste(input$Resp, "_tree_plot.png", sep = "")
-      },
-      content = function(file){
-        ggsave(file, tree_model())
-      }
-    )
     
     ###leaflet map
     output$lib_map <- renderLeaflet({
